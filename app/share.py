@@ -82,6 +82,23 @@ def render_html(card: dict) -> str:
         )
         facts_html = f'<section><h2>要点</h2><ul class="facts">{items}</ul></section>'
 
+    # 相近内容：没查到可靠来源时列出来当参考，明说了「不是答案」
+    related_html = ""
+    rel = card.get("related") or []
+    if rel:
+        items = "".join(
+            f"""<li><div class="t">{_e(r.get('text') or r.get('title'))}</div>
+            <div class="s">{_e(r.get('site'))}（{_e(r.get('tier_label'))}）· {_e(r.get('date') or '未标注时间')} ·
+            <a href="{_e(r.get('url'))}" target="_blank" rel="noopener">原文</a></div></li>"""
+            for r in rel
+        )
+        related_html = (
+            '<section><h2>相近内容（不是答案，仅供参考）</h2>'
+            '<p class="hint">这些检索结果回答的是别的问题，不是上面这个提问的答案。'
+            '不参与裁决，列出来供参考。</p>'
+            f'<ul class="facts related">{items}</ul></section>'
+        )
+
     conflict_html = ""
     # 条件差异：两方吵的其实不是同一件事（要先于 conflict_html 生成）
     cond = card.get("condition_diff") or {}
@@ -262,6 +279,7 @@ ol{{margin:0;padding-left:20px}} ol li{{margin-bottom:8px}} ol li:last-child{{ma
 .facts li{{padding-left:14px;border-left:2px solid #dbe2f5;margin-bottom:12px}}
 .facts li:last-child{{margin-bottom:0}}
 .facts .t{{font-size:14px}} .facts .s{{font-size:12px;color:#8a909c}}
+.facts.related li{{border-left-style:dashed}} .facts.related .t{{color:#4b5563}}
 .cgrid{{display:flex;flex-direction:column;gap:12px}}
 .cside{{border:1px solid #e4e7ec;border-radius:10px;padding:12px 14px;background:#fbfcfe}}
 .cside header{{display:flex;justify-content:space-between;font-size:12px;color:#5b6270;margin-bottom:8px}}
@@ -341,6 +359,7 @@ a{{color:#2f5bea}}
     </div>
   </div>
   {facts_html}
+  {related_html}
   {conflict_html}
   {num_html}
   <section><h2>裁决依据</h2><ol>{reasons_html}</ol></section>

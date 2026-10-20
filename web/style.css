@@ -647,6 +647,29 @@ body.modal-open { overflow: hidden; }
   .modal-foot .btn-ghost, .modal-foot .btn-primary { flex: 1 1 auto; }
 }
 
+/* 相近内容：没查到时的参考列表。整块用中性色 + 虚线边，一眼看出「这不是答案」 */
+.related { display: flex; flex-direction: column; gap: 10px; }
+.rel {
+  padding: 10px 12px;
+  background: var(--muted-bg);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.rel-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rel-title { font-size: 13px; font-weight: 600; min-width: 0; }
+.rel-title a { color: var(--text-2); text-decoration: none; }
+.rel-title a:hover { color: var(--accent); text-decoration: underline; }
+.rel-text {
+  margin-top: 5px; font-size: 12.5px; line-height: 1.65; color: var(--text-3);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.rel-foot {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 6px; font-size: 11.5px; color: var(--text-3);
+}
+.rel-foot a { color: var(--text-3); text-decoration: none; border-bottom: 1px dotted var(--line-hover); }
+.rel-foot a:hover { color: var(--accent); }
+
 /* 尊重系统的「减弱动态效果」：动画和过渡全部关掉，粒子层由 JS 静态铺一帧 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

@@ -122,6 +122,7 @@ class Card:
     condition_diff: dict[str, Any] = field(default_factory=dict)  # 冲突双方的条件差异
     numbers: list[dict[str, Any]] = field(default_factory=list)   # 关键数字核对（不参与裁决）
     gaps: list[str] = field(default_factory=list)                 # 最小补证清单
+    related: list[dict[str, Any]] = field(default_factory=list)  # 相近内容：不是答案，仅参考
     version: str = ""                                             # 产出这张卡的规则版本
 
     def to_dict(self) -> dict[str, Any]:
@@ -146,5 +147,6 @@ class Card:
             "condition_diff": self.condition_diff,
             "numbers": self.numbers,
             "gaps": self.gaps,
+            "related": self.related,
             "version": self.version,
         }

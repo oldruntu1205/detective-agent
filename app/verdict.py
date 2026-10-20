@@ -24,6 +24,97 @@ CLAIM_HINTS = ("是不是", "是否", "真的", "会致癌", "有毒", "安全�
                "靠谱吗", "可信吗", "会不会", "能不能", "有没有", "吗？", "吗?", "假的")
 _DATE_RE = re.compile(r"(\d{4})[-/年](\d{1,2})[-/月](\d{1,2})")
 
+# —— 时间守卫 ——
+# 提问里点明年份时，先问一句「这一年到了没有」。没到的年份一律判「没查到可靠来源」，
+# 绝不拿相邻年份的内容充数——这正是页脚承诺的「查不到就认怂」。
+# 曾经的真事故：问 2027 / 2029 年诺贝尔文学奖得主，检索回来的全是 2026 年的报道和
+# 诺奖官网的奖项总览页，系统按「权威度最高」挑首要来源，给了 90% 置信度的「已查到」，
+# headline 还是那句「Svetlana Alexievich's dictaphone…」。答案是真实的，但答错了问题。
+_YEAR_RE = re.compile(r"(?:19|20)\d{2}")
+_OUTCOME_HINTS = ("得主", "是谁", "冠军", "获奖", "颁给", "赢家", "夺魁", "折桂",
+                  "谁赢", "谁获得", "谁当选", "结果是谁", "结果如何")
+_RELATIVE_YEAR = (("后年", 2), ("明年", 1), ("今年", 0))
+
+
+def target_year(query: str, now: datetime) -> int | None:
+    """提问指向的年份：取问句里最大的那个（最近的年份通常就是问的对象）。"""
+    q = query or ""
+    years = [int(y) for y in _YEAR_RE.findall(q)]
+    for word, delta in _RELATIVE_YEAR:
+        if word in q:
+            years.append(now.year + delta)
+    return max(years) if years else None
+
+
+def is_outcome_question(query: str) -> bool:
+    """问的是某件事的结果（谁得奖 / 谁夺冠 / 结果是什么），而不是背景或条件。"""
+    return any(h in (query or "") for h in _OUTCOME_HINTS)
+
+
+def _mentions_year(ev: "Evidence", year: int) -> bool:
+    text = f"{ev.hit.title or ''} {ev.hit.passage or ''} {ev.hit.content or ''}"
+    return str(year) in text
+
+
+def _related(board: list["Evidence"], limit: int = 3) -> list[dict]:
+    """最相近的几条，明确标注「不是答案」。按权威档 + 相关性排。"""
+    out: list[dict] = []
+    for e in sorted(board, key=lambda x: (x.tier, -x.hit.score))[:limit]:
+        raw = e.hit.passage or e.hit.content or e.hit.title or ""
+        out.append({
+            "site": e.hit.display_site,
+            "url": e.hit.url,
+            "title": e.hit.title or e.hit.url,
+            "date": e.hit.date,
+            "text": _first_sentence(raw, 120),
+            "tier": e.tier,
+            "tier_label": e.tier_label,
+        })
+    return out
+
+
+def _time_guard(card: Card, board: list[Evidence], query: str, now: datetime) -> bool:
+    """返回 True 表示「这个问题现在答不了」，已经把卡改成「没查到可靠来源」。
+
+    两条规则：
+      1. 目标年份晚于当前年份 → 这一年还没到，谈不到结果；
+      2. 目标年份就是当前年份、且问的是结果 → 至少得有一条证据真的讲到这一年，
+         否则就是把别的时间拿来凑数。
+    """
+    qyear = target_year(query, now)
+    if qyear is None:
+        return False
+
+    if qyear > now.year:
+        why = ("future", f"提问指向 {qyear} 年，当前是 {now.year} 年——这一年还没到，"
+                         "自然也不存在结果。")
+    elif qyear == now.year and is_outcome_question(query) \
+            and not any(_mentions_year(e, qyear) for e in board):
+        why = ("stale", f"问的是 {qyear} 年的事，但检索回来的内容里没有一条讲到这一年——"
+                        "命中的都是别的时间或相邻话题。")
+    else:
+        return False
+
+    kind, text = why
+    card.verdict = "no_evidence"
+    card.verdict_label = VERDICT_LABEL["no_evidence"]
+    card.related = _related(board)
+    if kind == "future":
+        card.one_line = (f"问的是 {qyear} 年的事，现在是 {now.year} 年——这一年还没到，"
+                         "所以没有结果可给。")
+    else:
+        card.one_line = (f"问的是 {qyear} 年的事，但检索到的内容里没有一条讲这一年的，"
+                         "所以我不拿别的时间凑答案。")
+    card.reasons = [
+        text,
+        "按本工具规则：证据不足时只说『没查到可靠来源』，不用相邻年份的内容充当答案。",
+    ]
+    if card.related:
+        card.reasons.append(
+            f"下面列出的 {len(card.related)} 条是检索到的最相近内容，它们回答的不是这个问题，仅供参考。"
+        )
+    return True
+
 
 def detect_mode(query: str) -> str:
     q = (query or "").strip()
@@ -149,6 +240,17 @@ def _first_sentence(text: str, limit: int = 110) -> str:
     return (text or "")[:limit]
 
 
+def _strip_site_tail(text: str, hit: SearchHit) -> str:
+    """检索接口回传的摘要末尾常带上站点名（「…诺贝尔文学奖 中国网」），
+    一句话结论里不带这种尾巴——标题已经写着站点了。"""
+    out = (text or "").strip()
+    for name in (getattr(hit, "display_site", "") or "", getattr(hit, "site", "") or ""):
+        name = name.strip()
+        if len(name) >= 3 and out.endswith(name):
+            out = out[: -len(name)].rstrip(" 　· |-—")
+    return out
+
+
 def judge(query: str, hits: list[SearchHit], *, provider: str, elapsed_ms: int,
           notice: str = "", semantic_judge: object | None = None,
           domain: object | None = None) -> Card:
@@ -212,6 +314,11 @@ def judge(query: str, hits: list[SearchHit], *, provider: str, elapsed_ms: int,
             f"检索返回 {raw_count} 条结果，可用（有链接、相关性 ≥ {config.min_score}）的为 0 条。",
             "按本工具规则：没有可点开的依据就不给结论，直接说『没查到可靠来源』。",
         ]
+        return card
+
+    # 时间守卫：问的是还没到的年份，或问当年的结果却没有一条证据讲到这一年 → 直接没查到
+    if _time_guard(card, board, query, now):
+        card.gaps = build_gaps(card)
         return card
 
     if mode == "claim":
@@ -440,25 +547,47 @@ def _judge_open(card: Card, board: list[Evidence], now: datetime) -> None:
         card.verdict = "no_evidence"
         card.verdict_label = VERDICT_LABEL["no_evidence"]
         card.one_line = "检索到的内容都和这个问题对不上，所以我不猜。"
+        card.related = _related(board)
         card.reasons = [
             f"共检索 {card.stats['used']} 条结果，最高相关性仅 {top_score:.2f}，低于判定门槛 {config.min_score_open:.2f}。",
             "命中的都是背景资料或相邻话题，没有一条直接回答提问。",
             "按本工具规则：证据不足时只说『没查到可靠来源』，不用模型记忆补答案。",
         ]
+        if card.related:
+            card.reasons.append(
+                f"下面列出的 {len(card.related)} 条是检索到的最相近内容，仅供参考。"
+            )
         return
+
+    # 挑首要来源：优先从「既提到目标年份、又标了发布时间」的那批里选。
+    # 它们才可能是对这件事的报道，而不是一个恰好含有关键词的页面本身——
+    # 诺奖官网的奖项总览页就属于后者：域名够权威、关键词全中，但正文是别的得主的展品图注。
+    ordered = usable
+    qyear = target_year(card.query, now)
+    if qyear is not None:
+        reporting = [e for e in usable if _mentions_year(e, qyear) and e.hit.date]
+        if reporting:
+            rest = [e for e in usable if id(e) not in {id(r) for r in reporting}]
+            ordered = sorted(reporting, key=lambda e: (e.tier, -e.hit.score)) + rest
 
     card.verdict = "found"
     card.verdict_label = VERDICT_LABEL["found"]
-    primary = usable[0]
-    card.one_line = _first_sentence(primary.hit.passage or primary.hit.content or primary.hit.title)
+    primary = ordered[0]
+    card.one_line = _strip_site_tail(
+        _first_sentence(primary.hit.passage or primary.hit.content or primary.hit.title),
+        primary.hit,
+    )
 
     seen: set[str] = set()
-    for item in usable:
+    for item in ordered:
         if item.hit.domain in seen:
             continue
         seen.add(item.hit.domain)
         card.key_facts.append({
-            "text": _first_sentence(item.hit.passage or item.hit.content or item.hit.title, 140),
+            "text": _strip_site_tail(
+                _first_sentence(item.hit.passage or item.hit.content or item.hit.title, 140),
+                item.hit,
+            ),
             "site": item.hit.display_site,
             "url": item.hit.url,
             "date": item.hit.date,

@@ -168,6 +168,28 @@ function render(card) {
     factsPanel.classList.add("hidden");
   }
 
+  // —— 相近内容：没查到可靠来源时，把最像的几条摆出来当参考，不冒充答案 ——
+  const related = card.related || [];
+  if (related.length) {
+    $("relatedPanel").classList.remove("hidden");
+    $("relatedCount").textContent = `(${related.length})`;
+    $("related").innerHTML = related.map((r) => `
+      <div class="rel">
+        <div class="rel-head">
+          ${tierPill(r.tier, r.tier_label)}
+          <span class="rel-title"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title || r.url)}</a></span>
+        </div>
+        ${r.text ? `<div class="rel-text">${esc(r.text)}</div>` : ""}
+        <div class="rel-foot">
+          <span>${esc(r.site || "—")}</span>
+          <span>${esc(r.date || "未标注时间")}</span>
+          <a href="${esc(r.url)}" target="_blank" rel="noopener">原文</a>
+        </div>
+      </div>`).join("");
+  } else {
+    $("relatedPanel").classList.add("hidden");
+  }
+
   const conflictPanel = $("conflictPanel");
   if ((card.conflicts || []).length) {
     conflictPanel.classList.remove("hidden");
@@ -339,6 +361,7 @@ async function ask(query) {
     $("oneLine").textContent = "检索层没有正常返回：" + err.message;
     $("confWrap").style.display = "none";
     $("factsPanel").classList.add("hidden");
+    $("relatedPanel").classList.add("hidden");
     $("conflictPanel").classList.add("hidden");
     $("reasons").innerHTML = "<li>检查服务是否仍在运行，以及 .env 里的密钥配置。</li>";
     $("evidence").innerHTML = "";
