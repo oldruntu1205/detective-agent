@@ -32,7 +32,17 @@
     <select id="domainSel" class="domain-select" title="切换领域包：权威源、判定口径、结论用语一起换">
       <option value="general">通用查证</option>
     </select>
-    <span id="providerPill" class="pill pill-ghost">检索层检测中…</span>
+    <button id="wsaBtn" class="pill pill-set" type="button"
+            aria-haspopup="dialog" aria-controls="settingsModal"
+            title="配置元宝搜索的 SecretId / SecretKey">
+      <span class="pill-dot" aria-hidden="true"></span>
+      <svg class="pill-ico" viewBox="0 0 16 16" width="12" height="12" fill="none"
+           stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <path d="M2 4.5h5M11 4.5h3M2 11.5h3M9 11.5h5"/>
+        <circle cx="9" cy="4.5" r="1.7"/><circle cx="7" cy="11.5" r="1.7"/>
+      </svg>
+      <span id="wsaBtnText">元宝搜索设置</span>
+    </button>
     <button id="shareBtn" class="btn-ghost" disabled title="先查一条，再点这里打开自包含静态卡">分享卡片</button>
     <button id="copyBtn" class="btn-ghost" disabled title="先查一条，再点这里复制查证卡 JSON">复制 JSON</button>
     <button id="themeBtn" class="theme-switch" type="button" role="switch" aria-checked="false"
@@ -147,6 +157,76 @@
     <p class="empty-sub">上面点一个示例，或者直接输入你想核实的说法。<span class="verline-inline">当前规则版本 <b id="verPillEmpty">—</b></span></p>
   </div>
 </main>
+
+<!-- 元宝搜索设置：填密钥 → 保存 → 点「测试连接」看连通结果 -->
+<div id="settingsModal" class="modal-mask hidden" role="dialog" aria-modal="true"
+     aria-labelledby="settingsTitle">
+  <div class="modal" role="document">
+    <header class="modal-head">
+      <div>
+        <h2 id="settingsTitle">元宝搜索设置</h2>
+        <p class="modal-sub">填一次，本机保存，之后每次查证都走实时检索。</p>
+      </div>
+      <button id="settingsClose" class="modal-x" type="button" aria-label="关闭">×</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="set-status" id="setStatus">
+        <span class="set-status-dot" aria-hidden="true"></span>
+        <span id="setStatusText">读取中…</span>
+      </div>
+
+      <label class="field" for="setSid">
+        <span class="field-name">SecretId</span>
+        <input id="setSid" type="text" spellcheck="false" autocomplete="off"
+               placeholder="AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      </label>
+
+      <label class="field" for="setSkey">
+        <span class="field-name">SecretKey</span>
+        <span class="field-wrap">
+          <input id="setSkey" type="password" spellcheck="false" autocomplete="new-password"
+                 placeholder="创建 API 密钥时生成的那一串">
+          <button id="setEye" class="field-eye" type="button" aria-label="显示或隐藏 SecretKey">显示</button>
+        </span>
+      </label>
+
+      <p class="field-note">
+        两把密钥以明文写入本机 <code>.env</code>（已在 <code>.gitignore</code> 里，不会进仓库），
+        接口不回显完整值。服务默认只监听 <code>127.0.0.1</code>。
+      </p>
+
+      <div id="setResult" class="set-result hidden" role="status" aria-live="polite"></div>
+
+      <div class="set-help">
+        <div class="set-help-title">还没拿到密钥？三步搞定</div>
+        <ol>
+          <li>注册 / 登录腾讯云账号 ——
+            <a href="https://cloud.tencent.com/register" target="_blank" rel="noopener">cloud.tencent.com/register</a>
+          </li>
+          <li>开通「元宝搜索」服务 ——
+            <a href="https://console.cloud.tencent.com/wsapi/index" target="_blank" rel="noopener">控制台开通入口</a>
+          </li>
+          <li>进入 API 密钥管理，新建密钥并复制 SecretId、SecretKey ——
+            <a href="https://console.cloud.tencent.com/cam/capi" target="_blank" rel="noopener">API 密钥管理</a>
+          </li>
+        </ol>
+        <p class="set-help-note">
+          SecretKey 只在创建时显示一次，关掉页面就查不回来了，记得当场粘贴保存。
+        </p>
+        <a class="set-help-doc" href="https://cloud.tencent.com/document/product/1806"
+           target="_blank" rel="noopener">元宝搜索官方文档（wsa / SearchPro）→</a>
+      </div>
+    </div>
+
+    <footer class="modal-foot">
+      <button id="setClear" class="btn-ghost" type="button">清除并断开</button>
+      <span class="foot-gap"></span>
+      <button id="setTest" class="btn-ghost" type="button">测试连接</button>
+      <button id="setSave" class="btn-primary" type="button">保存</button>
+    </footer>
+  </div>
+</div>
 <script src="/static/particles.js"></script>
 <script src="/static/app.js"></script>
 </body>

@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 # 版本历史：录制/答辩时用来说明「这一版能做什么」，也方便对照报告里引用的数字出自哪一版
 VERSION_HISTORY: list[dict[str, str]] = [
@@ -50,6 +50,13 @@ VERSION_HISTORY: list[dict[str, str]] = [
         "title": "三种终态各再进一层",
         "detail": "条件差异定位（说不准时指出两方说的不是同一件事）、"
                   "关键数字核对（跨来源同量纲分歧提示）、最小补证清单（把没查到变成下一步）。",
+    },
+    {
+        "version": "1.5.0",
+        "title": "密钥在界面上配",
+        "detail": "右上角「元宝搜索设置」直接填 SecretId / SecretKey，写入本机 .env 并热生效，不用重启；"
+                  "保存与测试分开——保存只落盘，测试才真打一次 SearchPro，成功 / 失败分别给结论，"
+                  "错误码翻成能照着做的下一步；窗口底部给出开通服务与取密钥的三个入口。",
     },
 ]
 

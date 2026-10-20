@@ -71,26 +71,35 @@ function tierPill(tier, label) {
 }
 
 async function loadHealth() {
-  const pill = $("providerPill");
+  const btn = $("wsaBtn");
   try {
     const res = await fetch("/api/health");
     const data = await res.json();
     const ver = data.version ? "v" + data.version : "—";
     if ($("verPill")) $("verPill").textContent = ver;
     if ($("verPillEmpty")) $("verPillEmpty").textContent = ver;
-    pill.title = data.version_notes
-      ? `v${data.version} · ${data.version_notes.title || ""}`
-      : "";
-    if (data.provider === "wsa") {
-      pill.className = "pill pill-live";
-      pill.textContent = "元宝搜索 · 实时检索";
-    } else {
-      pill.className = "pill pill-sample";
-      pill.textContent = "离线样例 · 未连接元宝搜索";
-    }
+    paintProvider(data);
   } catch (err) {
-    pill.className = "pill pill-ghost";
-    pill.textContent = "服务未连接";
+    if (!btn) return;
+    btn.classList.remove("is-live", "is-sample");
+    btn.title = "服务未连接";
+  }
+}
+
+// 入口按钮只表达一件事：现在连没连上。颜色留给结论，不跟这里抢。
+function paintProvider(data) {
+  const btn = $("wsaBtn");
+  if (!btn) return;
+  const live = data.provider === "wsa";
+  btn.classList.toggle("is-live", live);
+  btn.classList.toggle("is-sample", !live);
+  const masked = data.secret_id_masked ? `（${data.secret_id_masked}）` : "";
+  if (live) {
+    btn.title = `元宝搜索已连接${masked}，当前走实时检索 · 点击可修改密钥`;
+  } else if (data.provider_setting === "mock") {
+    btn.title = "未连接元宝搜索（.env 里强制定了离线样例）· 点击填入密钥";
+  } else {
+    btn.title = "未连接元宝搜索，当前为离线样例 · 点击填入 SecretId / SecretKey";
   }
 }
 
@@ -436,6 +445,187 @@ function initTheme() {
     else if (mq.addListener) mq.addListener(onSchemeChange);
   }
 }
+
+// —— 元宝搜索设置 ——
+// 保存 = 写本机 .env 并热生效；测试 = 真打一次 SearchPro 看通不通。
+// 两个动作分开，是因为「保存成功」和「密钥能用」不是同一件事，混在一起最容易让人误判。
+let settingsReturnFocus = null;
+
+function setResult(kind, text) {
+  const box = $("setResult");
+  if (!box) return;
+  if (!kind) {
+    box.className = "set-result hidden";
+    box.innerHTML = "";
+    return;
+  }
+  const icon = kind === "ok" ? "✓" : kind === "bad" ? "✕" : "!";
+  box.className = "set-result " + kind;
+  box.innerHTML = `<span class="sr-ico">${icon}</span><span class="sr-body">${esc(text)}</span>`;
+}
+
+function paintSettingsStatus(status) {
+  const box = $("setStatus");
+  const txt = $("setStatusText");
+  if (!box || !txt) return;
+  box.className = "set-status";
+  if (!status) {
+    txt.textContent = "读不到当前配置，可以直接填写后保存";
+    return;
+  }
+  const live = status.has_wsa && status.provider === "wsa";
+  if (live) {
+    box.classList.add("live");
+    const from = status.source === "file" ? "本机 .env" : status.source === "env" ? "环境变量" : "已保存";
+    txt.textContent = `已连接：SecretId ${status.secret_id_masked || "已保存"}（来自${from}）`;
+  } else if (status.has_wsa) {
+    box.classList.add("sample");
+    txt.textContent = "密钥已保存，但当前被强制成离线样例（PROVIDER=mock）";
+  } else {
+    box.classList.add("sample");
+    txt.textContent = "未连接元宝搜索，当前是离线样例（demo/fixtures.json）";
+  }
+  $("setSid").placeholder = status.secret_id_masked
+    ? `已保存 ${status.secret_id_masked}，填新的会覆盖`
+    : "AKIDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  $("setSkey").placeholder = status.secret_key_set
+    ? "已保存，填新的会覆盖"
+    : "创建 API 密钥时生成的那一串";
+  $("setClear").disabled = !status.has_wsa;
+}
+
+async function refreshSettings() {
+  try {
+    const res = await fetch("/api/settings");
+    const status = await res.json();
+    paintSettingsStatus(status);
+    return status;
+  } catch (err) {
+    paintSettingsStatus(null);
+    return null;
+  }
+}
+
+async function openSettings() {
+  settingsReturnFocus = document.activeElement;
+  $("settingsModal").classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  setResult(null);
+  paintSettingsStatus(null);
+  await refreshSettings();
+  setTimeout(() => $("setSid").focus(), 60);
+}
+
+function closeSettings() {
+  $("settingsModal").classList.add("hidden");
+  document.body.classList.remove("modal-open");
+  if (settingsReturnFocus && settingsReturnFocus.focus) settingsReturnFocus.focus();
+}
+
+async function submitSettings(action) {
+  const isTest = action === "test";
+  const sid = $("setSid").value.trim();
+  const skey = $("setSkey").value.trim();
+
+  if (!isTest && (!sid || !skey)) {
+    setResult("bad", "SecretId 和 SecretKey 要一起填。已经存过的话，两栏留空、直接点「测试连接」就行。");
+    return;
+  }
+  if (isTest && !sid && !skey && $("setClear").disabled) {
+    setResult("bad", "还没有可测试的密钥，先填两栏再测。");
+    return;
+  }
+
+  const btn = isTest ? $("setTest") : $("setSave");
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = isTest ? "测试中…" : "保存中…";
+  if (isTest) setResult("warn", "正在请求元宝搜索 SearchPro，最多等 12 秒…");
+
+  try {
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, secret_id: sid, secret_key: skey }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    if (isTest) {
+      const probe = data.probe || {};
+      const scope = data.tested_saved ? "（用已保存的密钥）" : "";
+      if (probe.ok) {
+        setResult("ok", `连接成功${scope}：${probe.message}`);
+      } else {
+        setResult("bad", `连接失败${scope}：${probe.message || "没拿到原因"}`);
+      }
+    } else {
+      const notes = (data.notes || []).join("；");
+      const main = data.warning || "已保存到本机 .env，立即生效。";
+      setResult(data.warning ? "warn" : "ok", `${main}${notes ? " " + notes : ""} 点「测试连接」验证一次。`);
+      // 存完就把输入框清空：状态行和占位符已经说明「存的是什么」，留着旧值反而让人怀疑没存上
+      $("setSid").value = "";
+      $("setSkey").value = "";
+      await refreshSettings();
+    }
+    await loadHealth();
+  } catch (err) {
+    setResult("bad", `${isTest ? "测试" : "保存"}失败：${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+
+async function clearSettings() {
+  if (!confirm("清除后检索层会回到离线样例，确定吗？")) return;
+  const btn = $("setClear");
+  btn.disabled = true;
+  try {
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear" }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setResult("ok", "已清除密钥，检索层回到离线样例。");
+    $("setSid").value = "";
+    $("setSkey").value = "";
+    await refreshSettings();
+    await loadHealth();
+  } catch (err) {
+    setResult("bad", "清除失败：" + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+$("wsaBtn").addEventListener("click", openSettings);
+$("settingsClose").addEventListener("click", closeSettings);
+$("setSave").addEventListener("click", () => submitSettings("save"));
+$("setTest").addEventListener("click", () => submitSettings("test"));
+$("setClear").addEventListener("click", clearSettings);
+$("settingsModal").addEventListener("click", (event) => {
+  if (event.target === $("settingsModal")) closeSettings();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !$("settingsModal").classList.contains("hidden")) closeSettings();
+});
+$("setEye").addEventListener("click", () => {
+  const input = $("setSkey");
+  const reveal = input.type === "password";
+  input.type = reveal ? "text" : "password";
+  $("setEye").textContent = reveal ? "隐藏" : "显示";
+  $("setEye").setAttribute("aria-label", reveal ? "隐藏 SecretKey" : "显示 SecretKey");
+});
+// 粘贴时把首尾的空白和引号一并清掉——从控制台复制经常带进来
+["setSid", "setSkey"].forEach((id) => {
+  $(id).addEventListener("blur", () => {
+    const el = $(id);
+    el.value = el.value.trim().replace(/^["']|["']$/g, "");
+  });
+});
 
 initTheme();
 if (window.Particles) window.Particles.init($("particles"));

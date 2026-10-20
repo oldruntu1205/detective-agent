@@ -539,7 +539,7 @@ table.kv .mono { font-family: ui-monospace, Consolas, monospace; font-size: .93e
 <div class="progress"><i id="prog"></i></div>
 
 <div class="toolbar">
-  <span class="who">AI元宝大侦探 ｜ v1.4.0</span>
+  <span class="who">AI元宝大侦探 ｜ v1.5.0</span>
   <button class="btn-ico" id="noteBtn" type="button" title="演讲提示（N）" aria-label="切换演讲提示">☰</button>
   <button class="btn-ico" id="themeBtn" type="button" title="日间 / 夜间（T）" aria-label="切换配色">◐</button>
   <button class="btn-ico" id="fsBtn" type="button" title="全屏（F）" aria-label="全屏">⛶</button>
@@ -857,9 +857,9 @@ table.kv .mono { font-family: ui-monospace, Consolas, monospace; font-size: .93e
   <!-- 10 版本 -->
   <section class="slide" data-ch="版本" data-note="50 秒。点每个节点。讲清一条：版本号存在的理由是「同一个问题不能有两种卡」。">
     <div class="wrap">
-      <div class="kicker">版本特点 · v1.4.0</div>
+      <div class="kicker">版本特点 · v1.5.0</div>
       <h2>从「跑通」到「可被检验」</h2>
-      <p class="lead">五个版本，每个版本只解决一件事。点节点看细节。</p>
+      <p class="lead">六个版本，每个版本只解决一件事。点节点看细节。</p>
       <div class="tl mt-m" id="tl"></div>
       <div class="tl-panel" id="tlPanel"></div>
       <div class="rule-bar">
@@ -876,7 +876,7 @@ table.kv .mono { font-family: ui-monospace, Consolas, monospace; font-size: .93e
       <h2>下载就能跑，产物能带走</h2>
       <div class="grid g4 mt-m">
         <div class="card stat"><b>0</b><span>第三方依赖<br>纯 Python 标准库 + 原生 JS</span></div>
-        <div class="card stat"><b>4</b><span>个 GET 接口<br>健康 / 领域 / 样例 / 查证卡</span></div>
+        <div class="card stat"><b>5</b><span>个 GET 接口 + 1 个 POST<br>健康 / 领域 / 样例 / 查证卡 / 密钥设置</span></div>
         <div class="card stat"><b>12</b><span>位指纹<br>自包含静态卡可离线复核</span></div>
         <div class="card stat"><b>600</b><span>颗粒子背景<br>实测 75fps，不占帧预算</span></div>
       </div>
@@ -929,7 +929,7 @@ table.kv .mono { font-family: ui-monospace, Consolas, monospace; font-size: .93e
         <div class="card tight"><p class="small"><b style="color:var(--text)">分享卡片</b><br>导出可离线复核的静态卡</p></div>
         <div class="card tight"><p class="small"><b style="color:var(--text)">T 键</b><br>投影建议用夜间配色</p></div>
       </div>
-      <p class="sub mt-m">AI元宝大侦探 ｜ 1024 超能 Coding 周末 · 侦探赛道 ｜ v1.4.0</p>
+      <p class="sub mt-m">AI元宝大侦探 ｜ 1024 超能 Coding 周末 · 侦探赛道 ｜ v1.5.0</p>
     </div>
   </section>
 
@@ -1420,7 +1420,8 @@ table.kv .mono { font-family: ui-monospace, Consolas, monospace; font-size: .93e
     { v: "1.1.0", h: "语义判定与可校验引用", d: "模型逐条判立场但只判单条、不判结论；引用必须逐字可校验，单条失败只回落那一条；自包含静态卡 + 12 位指纹。" },
     { v: "1.2.0", h: "领域包", d: "六个行业包（通用 / 政策 / 资质 / 健康 / 财务 / 法务），权威源表、线索词、语义上下文、结论用语、时效衰减全部配置化，新增行业不改 Python。" },
     { v: "1.3.0", h: "让结论可被检验", d: "多路查询规划、同源转载识别（转载权重减半、不计独立源）、推翻路径、留一检验（抽掉支点结论会翻）；修复否定式守卫误判。" },
-    { v: "1.4.0", h: "三种终态各再进一层", d: "条件差异定位（说不准时指出两方说的不是同一件事）、关键数字核对（跨来源同量纲分歧提示）、最小补证清单（把没查到变成下一步）。" }
+    { v: "1.4.0", h: "三种终态各再进一层", d: "条件差异定位（说不准时指出两方说的不是同一件事）、关键数字核对（跨来源同量纲分歧提示）、最小补证清单（把没查到变成下一步）。" },
+    { v: "1.5.0", h: "密钥在界面上配", d: "右上角「元宝搜索设置」直接填 SecretId / SecretKey，写入本机 .env 并热生效，不用重启；保存只落盘、测试才真打一次接口，成功与失败分别给结论，错误码翻成能照着做的下一步。" }
   ];
 
   var tl = document.getElementById("tl");

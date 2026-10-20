@@ -6,7 +6,7 @@
 
 零第三方依赖（纯 Python 标准库 + 原生 JS），下载即可跑。
 
-**当前版本 v1.4.0** ｜ `python run.py --version` 看完整版本历史
+**当前版本 v1.5.0** ｜ `python run.py --version` 看完整版本历史
 
 | 版本 | 做了什么 |
 |---|---|
@@ -15,6 +15,7 @@
 | 1.2.0 | 六个领域包，新增行业只写 JSON 不改代码 |
 | 1.3.0 | 多路检索、同源转载、推翻路径、留一检验 |
 | 1.4.0 | 三种终态各再进一层：条件差异 / 数字核对 / 补证清单 |
+| 1.5.0 | 密钥在界面上配：保存只落盘、测试才真打接口，结果分开给 |
 
 版本号会写进每张卡的 JSON（`card.version`）和静态卡页脚。原因很直接：这套工具主张「同一批输入
 永远得到同一个标签」，但门槛、权重、词表改过之后同一个问题就会得出不同的卡。没有版本号，
@@ -36,7 +37,9 @@ python run.py "隔夜菜会致癌吗" --json out/card.json
 python run.py "宁波市智能化改造项目最高补贴多少" --domain policy
 python run.py "这家供应商的 3C 证书还有效吗" --domain tender
 
-# 3. 接入真实元宝搜索
+# 3. 接入真实元宝搜索（两种方式等价，选一种）
+#    方式 A：网页右上角「元宝搜索设置」直接填，写入 .env 并立即生效，无需重启
+#    方式 B：手工编辑
 cp .env.example .env    # 填入 TENCENTCLOUD_SECRET_ID / SECRET_KEY，PROVIDER=wsa
 python run.py --provider wsa
 ```
@@ -47,6 +50,25 @@ python run.py --provider wsa
 ---
 
 ## 界面
+
+**元宝搜索设置。** 右上角那个带状态点的按钮，点开就是密钥设置窗口。
+
+- **状态点**：灰色/琥珀色 = 未连接，走离线样例；绿色 = 已连接，走实时检索。颜色只表达这一件事，
+  不跟结论的颜色抢戏。
+- **保存与测试是两件事**，故意拆开：点「保存」只把密钥写进 `app/settings.py` 定位的本机 `.env`，
+  并同步更新进程内的 `config` 单例（**不用重启**）；点「测试连接」才真的打一次 `SearchPro`，
+  成功和失败分别给结论——「保存成功」不等于「密钥能用」，混在一起最容易让人误判。
+- **错误码翻成人话，但原文不丢**：`SecretIdNotFound` → 「密钥校验失败，重新生成一对」；
+  `ResourceNotFound` → 「密钥有效但服务没开通」；`RequestLimitExceeded` → 「限频，稍等」。
+  判断顺序有讲究——`SecretIdNotFound` 里也含 `notfound`，先按「未开通」处理会把填错密钥的人
+  指去开通服务，白跑一趟。
+- **窗口底部给出三个入口**：注册腾讯云 / 开通元宝搜索 / 创建 API 密钥，外加官方文档链接。
+  这些链接是照着「拿到密钥要经过哪几步」排的，不是随手挂一个首页。
+- 「清除并断开」会把两把密钥清空并回落到离线样例，`.env` 里其它配置原样保留。
+
+接口层的两道闸门：只接受本站 `Origin` 的 `application/json` 请求（跨站想绕过预检只能发
+`text/plain` 之类的简单请求，会被直接拒掉），请求体上限 8KB。查询接口永远只返回脱敏
+SecretId（`AKID******wxyz`）和「SecretKey 已保存」，不回显完整值。
 
 **日间 / 夜间。** 开关在右上角。首次访问跟随系统的 `prefers-color-scheme`，手动切过就记进
 `localStorage`（键 `detective-theme`），之后不再被系统覆盖。`?theme=` 参数优先于本地记忆，
@@ -237,11 +259,17 @@ python run.py --provider wsa
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/health` | 当前版本、检索层、判定引擎、是否有密钥/模型 |
+| GET | `/api/health` | 当前版本、检索层、判定引擎、是否有密钥/模型、脱敏 SecretId |
+| GET | `/api/settings` | 密钥状态：是否已配置、来源（.env / 环境变量）、脱敏 SecretId |
+| POST | `/api/settings` | `{"action":"save\|test\|clear", "secret_id":"", "secret_key":""}` |
 | GET | `/api/domains` | 领域包列表 |
 | GET | `/api/samples?domain=policy` | 该领域的示例问句（前端 chip） |
 | GET | `/api/check?q=问题&domain=policy&provider=wsa\|mock` | 返回完整查证卡 JSON |
 | GET | `/api/card?q=问题&domain=policy&download=1` | 返回自包含静态查证卡 HTML；带 `download=1` 走下载 |
+
+`POST /api/settings` 三个动作的区别：`save` 只写 `.env` 并热生效（不联网，快）；
+`test` 真打一次 `SearchPro`（12 秒超时，返回 `probe.ok` 与翻译过的人话结论，未填密钥时用已保存的那一对）；
+`clear` 清空两把密钥并回落到离线样例。
 
 `domain` 取值：`general` / `policy` / `tender` / `health` / `finance` / `labor`，默认 `general`。
 
@@ -264,6 +292,7 @@ python run.py "问题" --json out/a.json # 只存 JSON
 - 出参：`Response.Pages` 是**字符串数组**，每个元素还要再 `json.loads` 一次，字段为 `title / url / date / passage / content / site / score / authority_level / favicon`
 - `authority_level`（0~5）与 `content`、`Deeplinks` 仅旗舰版返回；标准版靠域名白名单分级，本项目的 `app/authority.py` 两条路都走
 - 密钥：`https://console.cloud.tencent.com/cam/capi`；服务开通：`https://console.cloud.tencent.com/wsapi/index`
+- 也可以不碰命令行和 `.env`：网页右上角「元宝搜索设置」填完保存即可，等价于手工编辑 `.env`
 - 错误码里 `RequestLimitExceeded` 是限频、`ResourceNotFound` 是没开通服务，报错会原样透传到查证卡，不会伪装成「没查到」
 
 ---
@@ -281,6 +310,8 @@ python run.py "问题" --json out/a.json # 只存 JSON
 9. 离线样例（`demo/fixtures.json`）是**演示数据**，不得当作真实查证结果使用，页面会显示「离线样例」角标。
 10. `scripts/mock_llm.py` 是本地联调桩，只用来验证语义路径与引用校验，**不是产品代码**。
 11. 界面配色与粒子背景只作用于主界面。`app/share.py` 生成的静态查证卡仍是固定浅色单主题、无粒子——它是给截图和归档用的，跟着界面切深色会让存下来的卡在不同环境下长得不一样。
+12. 界面里填的密钥以**明文**写入项目根目录的 `.env`（`.gitignore` 已排除，不会进仓库）。这是有意的取舍：能自己打开文件核对、删掉就干净，比塞进系统钥匙串更适合「拷走就能跑」。服务默认只监听 `127.0.0.1`；如果要放到内网其它机器上访问，先自己想清楚谁能点那个设置窗口。
+13. 密钥状态是启动时读进内存的单例，界面能改它，但**进程外的环境变量优先级更高**：如果你在 systemd / docker 里注入了 `TENCENTCLOUD_SECRET_KEY`，界面上改的值在重启后会被环境变量盖回去。这种部署方式请直接改环境变量。
 
 ---
 
@@ -306,11 +337,12 @@ detective-agent/
 │   ├── numbers.py            关键数字核对（不参与裁决，只提示口径分歧）
 │   ├── gaps.py               最小补证清单（把「没查到」变成可执行下一步）
 │   ├── llm.py                表达层（可选）
+│   ├── settings.py           密钥存取（写 .env + 热更新 config + 连通性探测与错误码翻译）
 │   ├── share.py              静态查证卡渲染
 │   ├── pipeline.py           领域 → 检索 → 裁决 → 表达
 │   ├── server.py             零依赖 HTTP 服务
 │   └── providers/            元宝搜索 / 离线样例
-├── web/                      查证卡前端（领域下拉 / 日间夜间切换 / Canvas 粒子背景）
+├── web/                      查证卡前端（领域下拉 / 密钥设置弹窗 / 日间夜间切换 / Canvas 粒子背景）
 ├── demo/                     离线样例数据（通用 + 领域）
 ├── docs/
 │   ├── DOMAINS.md            高复用场景说明与复用矩阵
