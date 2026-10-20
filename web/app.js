@@ -449,7 +449,14 @@ function initTheme() {
 // —— 元宝搜索设置 ——
 // 保存 = 写本机 .env 并热生效；测试 = 真打一次 SearchPro 看通不通。
 // 两个动作分开，是因为「保存成功」和「密钥能用」不是同一件事，混在一起最容易让人误判。
+//
+// 人性化的一条：**测通过之后点保存，窗口自己关掉**。测试通过说明这两把钥匙已经验证过，
+// 用户此时唯一的下一步就是回去提问；还让他伸手点 × 属于把流程成本转嫁给用户。
+// 反过来，没测过就保存时窗口不关——那种「存完才发现密钥是错的」最容易让人怀疑没存上，
+// 留着窗口让他顺手点一次测试，比关掉再重新打开体贴。
 let settingsReturnFocus = null;
+// untested = 当前输入框里的值还没通过测试。输入一变就置 true，测过就置 false。
+const settingsState = { untested: true };
 
 function setResult(kind, text) {
   const box = $("setResult");
@@ -508,6 +515,7 @@ async function refreshSettings() {
 
 async function openSettings() {
   settingsReturnFocus = document.activeElement;
+  settingsState.untested = true;
   $("settingsModal").classList.remove("hidden");
   document.body.classList.add("modal-open");
   setResult(null);
@@ -520,6 +528,19 @@ function closeSettings() {
   $("settingsModal").classList.add("hidden");
   document.body.classList.remove("modal-open");
   if (settingsReturnFocus && settingsReturnFocus.focus) settingsReturnFocus.focus();
+}
+
+// 保存成功后的收尾：该关就关，该留就留。
+function finishSave(autoClose, notes) {
+  const extra = notes ? " " + notes : "";
+  setResult("ok", autoClose
+    ? `已保存到本机 .env，立即生效。${extra}窗口即将关闭。`
+    : `已保存到本机 .env，立即生效。${extra}这对密钥还没测过，点「测试连接」确认一次——验证通过后窗口就会自己关掉。`);
+  if (autoClose) {
+    setTimeout(() => {
+      if (!$("settingsModal").classList.contains("hidden")) closeSettings();
+    }, 1500);
+  }
 }
 
 async function submitSettings(action) {
@@ -555,17 +576,24 @@ async function submitSettings(action) {
       const probe = data.probe || {};
       const scope = data.tested_saved ? "（用已保存的密钥）" : "";
       if (probe.ok) {
-        setResult("ok", `连接成功${scope}：${probe.message}`);
+        settingsState.untested = false;
+        setResult("ok", `连接成功${scope}：${probe.message} 现在点「保存」，窗口会自己关掉。`);
       } else {
+        settingsState.untested = true;
         setResult("bad", `连接失败${scope}：${probe.message || "没拿到原因"}`);
       }
     } else {
       const notes = (data.notes || []).join("；");
-      const main = data.warning || "已保存到本机 .env，立即生效。";
-      setResult(data.warning ? "warn" : "ok", `${main}${notes ? " " + notes : ""} 点「测试连接」验证一次。`);
+      if (data.warning) {
+        setResult("warn", `${data.warning}${notes ? " " + notes : ""} 点「测试连接」确认一次。`);
+      } else {
+        finishSave(!settingsState.untested, notes);
+      }
       // 存完就把输入框清空：状态行和占位符已经说明「存的是什么」，留着旧值反而让人怀疑没存上
       $("setSid").value = "";
       $("setSkey").value = "";
+      // 输入框空了，等于又是「一对没测过的值」
+      settingsState.untested = true;
       await refreshSettings();
     }
     await loadHealth();
@@ -621,6 +649,7 @@ $("setEye").addEventListener("click", () => {
 });
 // 粘贴时把首尾的空白和引号一并清掉——从控制台复制经常带进来
 ["setSid", "setSkey"].forEach((id) => {
+  $(id).addEventListener("input", () => { settingsState.untested = true; });
   $(id).addEventListener("blur", () => {
     const el = $(id);
     el.value = el.value.trim().replace(/^["']|["']$/g, "");
