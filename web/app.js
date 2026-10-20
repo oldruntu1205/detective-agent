@@ -387,6 +387,58 @@ $("domainSel").addEventListener("change", async (event) => {
   await loadSamples();
 });
 
+// —— 日间 / 夜间 ——
+// 主题存在 localStorage，没存过就跟随系统；切换后要通知粒子层重读颜色变量。
+const THEME_KEY = "detective-theme";
+
+function savedTheme() {
+  try { return localStorage.getItem(THEME_KEY); } catch (err) { return null; }
+}
+
+function applyTheme(theme, persist) {
+  const next = theme === "dark" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  const btn = $("themeBtn");
+  if (btn) {
+    btn.setAttribute("aria-checked", String(next === "dark"));
+    btn.title = next === "dark" ? "当前：夜间样式，点击切到日间" : "当前：日间样式，点击切到夜间";
+  }
+  if (persist) {
+    try { localStorage.setItem(THEME_KEY, next); } catch (err) { /* 写不进去也不影响本次渲染 */ }
+  }
+  if (window.Particles && window.Particles.setTheme) window.Particles.setTheme();
+}
+
+function initTheme() {
+  const prefersDark = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  // ?theme=dark / ?theme=light 可以直接指定配色，优先于本地记忆
+  const forced = new URLSearchParams(location.search).get("theme");
+  const initial = (forced === "dark" || forced === "light")
+    ? forced
+    : (savedTheme() || (prefersDark ? "dark" : "light"));
+  applyTheme(initial, false);
+
+  const btn = $("themeBtn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const now = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      applyTheme(now, true);
+    });
+  }
+
+  // 用户没手动选过时，跟着系统的日夜设置走
+  if (window.matchMedia) {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onSchemeChange = (e) => {
+      if (!savedTheme()) applyTheme(e.matches ? "dark" : "light", false);
+    };
+    if (mq.addEventListener) mq.addEventListener("change", onSchemeChange);
+    else if (mq.addListener) mq.addListener(onSchemeChange);
+  }
+}
+
+initTheme();
+if (window.Particles) window.Particles.init($("particles"));
 loadHealth();
 loadDomains();
 
