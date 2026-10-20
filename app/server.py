@@ -132,7 +132,7 @@ def serve(host: str | None = None, port: int | None = None) -> None:
     provider = config.resolved_provider
     engine = config.resolved_stance_engine
     print("=" * 62)
-    print("  查得到、信得过 · AI元宝大侦探")
+    print("  AI元宝大侦探 · 查得到、信得过")
     print(f"  检索层：{provider}" + ("（未检测到腾讯云密钥，已切离线样例）" if provider == "mock" else "（元宝搜索 SearchPro）"))
     print(f"  判定引擎：{engine}" + ("（未配置模型，走词典兜底）" if engine == "lexicon" else "（语义判定 + 引用逐字校验）"))
     print(f"  地址：  http://{host}:{port}/")

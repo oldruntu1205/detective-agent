@@ -137,7 +137,7 @@ def print_card(card: dict) -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="查得到，信得过 —— 侦探赛道查证 Agent")
+    ap = argparse.ArgumentParser(description="AI元宝大侦探 —— 查得到，信得过 · 侦探赛道查证 Agent")
     ap.add_argument("query", nargs="*", help="要核查的问题；留空则启动网页")
     ap.add_argument("--provider", default="", choices=["", "wsa", "mock"], help="强制指定检索层")
     ap.add_argument("--domain", default="general",
@@ -153,7 +153,7 @@ def main() -> None:
     args = ap.parse_args()
 
     if args.version:
-        print(f"查得到，信得过 · AI元宝大侦探  v{__version__}")
+        print(f"AI元宝大侦探 · 查得到，信得过  v{__version__}")
         print()
         for item in VERSION_HISTORY:
             print(f"  v{item['version']}  {item['title']}")
