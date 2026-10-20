@@ -229,7 +229,7 @@ def render_html(card: dict) -> str:
 <html lang="zh-CN"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>查证卡 · {_e(card.get('query'))} · AI 元宝 1024 大侦探</title>
+<title>查证卡 · {_e(card.get('query'))} · AI元宝大侦探</title>
 <style>
 *{{box-sizing:border-box}}
 body{{margin:0;padding:32px 20px 56px;background:#f6f7f9;color:#16181d;
@@ -322,7 +322,7 @@ a{{color:#2f5bea}}
 }}
 </style></head>
 <body><div class="wrap">
-  <div class="brand"><span><b>查得到、信得过</b> · AI 元宝 1024 大侦探</span><span>v{_e(card.get('version') or '—')} ｜ 指纹 <span class="fp">{fp}</span></span></div>
+  <div class="brand"><span><b>查得到、信得过</b> · AI元宝大侦探</span><span>v{_e(card.get('version') or '—')} ｜ 指纹 <span class="fp">{fp}</span></span></div>
   {notice_html}
   <div class="card">
     <div class="q">{_e(domain_name)} ｜ {_e(MODE_TEXT.get(str(card.get('mode')), ''))} ｜ {_e(card.get('query_time'))}</div>

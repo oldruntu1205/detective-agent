@@ -153,7 +153,7 @@ def main() -> None:
     args = ap.parse_args()
 
     if args.version:
-        print(f"查得到，信得过 · AI 元宝 1024 大侦探  v{__version__}")
+        print(f"查得到，信得过 · AI元宝大侦探  v{__version__}")
         print()
         for item in VERSION_HISTORY:
             print(f"  v{item['version']}  {item['title']}")
