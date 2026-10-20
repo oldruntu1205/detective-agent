@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI元宝大侦探——查得到、信得过 · 路演</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
+<script>
+// 首帧之前定主题，避免投影时闪一下白
+(function () {
+  var t = "dark";
+  try {
+    var f = new URLSearchParams(location.search).get("theme");
+    t = (f === "light" || f === "dark") ? f : (localStorage.getItem("detective-theme") || "dark");
+  } catch (e) { /* 隐私模式 */ }
+  document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+})();
+</script>
+<style>
+/* ==========================================================================
+   配色沿用主站的语义变量，改令牌就够，不要在这里写死色值
+   ========================================================================== */
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #fbfcfe;
+  --line: #e4e7ec;
+  --line-hover: #c3cbdc;
+  --text: #16181d;
+  --text-2: #5b6270;
+  --text-3: #8a909c;
+  --accent: #2f5bea;
+  --accent-soft: #eef2ff;
+  --ok: #10854f;
+  --ok-bg: #e9f7ef;
+  --ok-line: #bfe6d1;
+  --bad: #c8342f;
+  --bad-bg: #fdeceb;
+  --bad-line: #f3d9d6;
+  --warn: #a86a00;
+  --warn-bg: #fdf3e0;
+  --warn-line: #f0dcb4;
+  --info: #1f5fa8;
+  --info-bg: #eaf2fb;
+  --info-line: #cfe0f4;
+  --muted: #6b7280;
+  --muted-bg: #eef0f3;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 10px 30px rgba(16, 24, 40, .06);
+  --pt-dot: 99, 102, 241;
+  --pt-link: 79, 70, 229;
+  --pt-mouse: 124, 58, 237;
+  --pt-boost: 1.45;
+  --glow-a: rgba(99, 102, 241, .10);
+  --glow-b: rgba(47, 91, 234, .07);
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d1017;
+  --surface: #151922;
+  --surface-2: #1a1f2a;
+  --line: #262c38;
+  --line-hover: #3a4356;
+  --text: #e7eaf0;
+  --text-2: #9aa4b5;
+  --text-3: #6f7889;
+  --accent: #6d8cff;
+  --accent-soft: #1b2436;
+  --ok: #45d69b;
+  --ok-bg: #0f2b21;
+  --ok-line: #1f5c43;
+  --bad: #ff7a72;
+  --bad-bg: #2c1516;
+  --bad-line: #5a2b28;
+  --warn: #f0b53e;
+  --warn-bg: #2b2213;
+  --warn-line: #5c4a20;
+  --info: #6aa8ef;
+  --info-bg: #131f2e;
+  --info-line: #24415f;
+  --muted: #8b93a3;
+  --muted-bg: #232834;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 30px rgba(0, 0, 0, .35);
+  --pt-dot: 165, 180, 252;
+  --pt-link: 129, 140, 248;
+  --pt-mouse: 199, 210, 254;
+  --pt-boost: 1.15;
+  --glow-a: rgba(109, 140, 255, .16);
+  --glow-b: rgba(139, 92, 246, .13);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  margin: 0; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color .25s ease, color .25s ease;
+}
+
+/* 背景：柔光 + 粒子，都在内容之下 */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(56vw 46vh at 8% -8%, var(--glow-a), transparent 70%),
+    radial-gradient(50vw 44vh at 95% 2%, var(--glow-b), transparent 72%);
+}
+#pt { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; }
+
+/* ==========================================================================
+   版式令牌
+   ========================================================================== */
+:root {
+  --fs-display: clamp(40px, 6.2vw, 88px);
+  --fs-h2: clamp(23px, 2.9vw, 40px);
+  --fs-h3: clamp(15px, 1.3vw, 19px);
+  --fs-lead: clamp(14px, 1.28vw, 20px);
+  --fs-body: clamp(12.5px, 1.02vw, 15.5px);
+  --fs-mini: clamp(11px, .84vw, 12.5px);
+  --pad-x: clamp(28px, 6vw, 104px);
+  --radius: 14px;
+}
+
+/* ==========================================================================
+   幻灯片
+   ========================================================================== */
+#deck { position: fixed; inset: 0; z-index: 1; }
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(56px, 7vh, 92px) var(--pad-x) clamp(64px, 8vh, 96px);
+  overflow-y: auto; overscroll-behavior: contain;
+  opacity: 0; visibility: hidden; transform: translateY(16px);
+  transition: opacity .32s ease, transform .32s ease, visibility .32s;
+}
+.slide.on { opacity: 1; visibility: visible; transform: none; }
+/* 首帧定位到某一屏时不要做淡出动画，否则会看到上一屏一闪 */
+body.booting .slide { transition: none !important; }
+.slide::-webkit-scrollbar { width: 0; }
+.wrap { width: 100%; max-width: 1180px; margin: 0 auto; }
+
+.kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--fs-mini); font-weight: 700; letter-spacing: 1.4px;
+  color: var(--text-3); text-transform: uppercase; margin-bottom: 14px;
+}
+.kicker::before {
+  content: ""; width: 22px; height: 2px; background: var(--accent); border-radius: 2px;
+}
+h1 {
+  margin: 0; font-size: var(--fs-display); font-weight: 800;
+  letter-spacing: -.5px; line-height: 1.08;
+}
+h2 {
+  margin: 0 0 10px; font-size: var(--fs-h2); font-weight: 800;
+  letter-spacing: -.2px; line-height: 1.2;
+}
+h3 { margin: 0 0 6px; font-size: var(--fs-h3); font-weight: 700; }
+.lead {
+  margin: 12px 0 0; font-size: var(--fs-lead); color: var(--text-2);
+  line-height: 1.62; max-width: 42em;
+}
+.lead b, .lead strong { color: var(--text); font-weight: 700; }
+.sub { font-size: var(--fs-body); color: var(--text-3); line-height: 1.6; }
+.mt-s { margin-top: 10px; } .mt-m { margin-top: 20px; } .mt-l { margin-top: 30px; }
+.hl { color: var(--accent); }
+
+/* 强调条 */
+.rule-bar {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-top: clamp(16px, 2.4vh, 26px); padding: 13px 18px;
+  border-radius: var(--radius); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent); background: var(--surface);
+  font-size: var(--fs-body); color: var(--text-2); line-height: 1.6;
+}
+.rule-bar b { color: var(--text); }
+.rule-bar .ico { font-size: 15px; line-height: 1.45; color: var(--accent); }
+
+/* 卡片 */
+.grid { display: grid; gap: 14px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 900px) { .g3, .g4, .g5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .g2, .g3, .g4, .g5 { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+  transition: border-color .2s ease, background-color .25s ease;
+}
+.card.tight { padding: 13px 15px; }
+.card .mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 7px; font-size: 12px; font-weight: 800;
+  margin-bottom: 9px;
+}
+.card .mark.a { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--line); }
+.card .mark.b { color: var(--bad); background: var(--bad-bg); border: 1px solid var(--bad-line); }
+.card .mark.c { color: var(--ok); background: var(--ok-bg); border: 1px solid var(--ok-line); }
+.card .mark.d { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-line); }
+.card p { margin: 6px 0 0; font-size: var(--fs-body); color: var(--text-2); line-height: 1.62; }
+.card p.small { font-size: var(--fs-mini); color: var(--text-3); }
+
+/* 层：检索 / 裁决 / 表达 */
+.layer { position: relative; padding-top: 30px; }
+.layer .tag {
+  position: absolute; top: 0; left: 0;
+  font-size: var(--fs-mini); font-weight: 800; letter-spacing: 1.2px;
+  color: var(--text-3);
+}
+.layer ul { margin: 8px 0 0; padding-left: 16px; font-size: var(--fs-body); color: var(--text-2); line-height: 1.65; }
+.layer ul li { margin: 3px 0; }
+.layer ul code {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: .94em;
+  color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px;
+}
+
+/* ==========================================================================
+   控件
+   ========================================================================== */
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  appearance: none; border: 1px solid var(--line); background: var(--surface);
+  color: var(--text-2); font: inherit; font-size: var(--fs-mini); font-weight: 600;
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  transition: all .16s ease;
+}
+.chip:hover { border-color: var(--line-hover); color: var(--text); }
+.chip[aria-pressed="true"], .chip.on {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff;
+}
+[data-theme="dark"] .chip[aria-pressed="true"], [data-theme="dark"] .chip.on { color: #0b0e14; }
+
+.btn-ico {
+  appearance: none; width: 30px; height: 30px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text-2);
+  border-radius: 8px; cursor: pointer; font: inherit; font-size: 13px;
+  transition: all .16s ease;
+}
+.btn-ico:hover { border-color: var(--line-hover); color: var(--text); }
+
+/* 权重计算器 */
+.calc { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(16px, 2.4vw, 32px); }
+@media (max-width: 860px) { .calc { grid-template-columns: 1fr; } }
+.field { margin-bottom: 14px; }
+.field-label {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font-size: var(--fs-mini); font-weight: 700; color: var(--text-3);
+  letter-spacing: .6px; margin-bottom: 7px;
+}
+.field-label b { color: var(--accent); font-size: var(--fs-body); font-variant-numeric: tabular-nums; }
+
+input[type="range"] {
+  appearance: none; width: 100%; height: 4px; border-radius: 99px;
+  background: var(--muted-bg); outline: none; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface); cursor: grab;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px; border: 2px solid var(--surface); border-radius: 50%;
+  background: var(--accent); cursor: grab;
+}
+
+.calc-out {
+  display: flex; flex-direction: column; justify-content: center;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow);
+}
+.calc-num { display: flex; align-items: baseline; gap: 10px; }
+.calc-num b {
+  font-size: clamp(38px, 4.6vw, 62px); font-weight: 800; letter-spacing: -2px;
+  font-variant-numeric: tabular-nums; line-height: 1; color: var(--text);
+}
+.calc-num span { font-size: var(--fs-mini); color: var(--text-3); font-weight: 600; }
+.bar { height: 6px; border-radius: 99px; background: var(--muted-bg); margin: 14px 0 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--accent); transition: width .3s cubic-bezier(.4, 0, .2, 1); }
+.bar-cap { display: flex; justify-content: space-between; font-size: var(--fs-mini); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.formula {
+  margin-top: 14px; padding: 10px 12px; border-radius: 9px;
+  background: var(--surface-2); border: 1px dashed var(--line);
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: var(--fs-mini); color: var(--text-2); line-height: 1.7;
+  word-break: break-all;
+}
+.formula em { color: var(--accent); font-style: normal; font-weight: 700; }
+.calc-note { margin-top: 12px; font-size: var(--fs-mini); color: var(--text-2); line-height: 1.65; }
+.calc-note b { color: var(--text); }
+
+/* 终态预览卡 */
+.vcard {
+  border: 1px solid var(--line); border-left: 5px solid var(--muted);
+  border-radius: var(--radius); background: var(--surface);
+  padding: 18px 22px; box-shadow: var(--shadow);
+}
+.vcard.ok { border-left-color: var(--ok); }
+.vcard.bad { border-left-color: var(--bad); }
+.vcard.warn { border-left-color: var(--warn); }
+.vcard.info { border-left-color: var(--info); }
+.vcard.muted { border-left-color: var(--muted); }
+.vlabel { font-size: clamp(24px, 2.6vw, 34px); font-weight: 800; letter-spacing: .3px; }
+.vcard.ok .vlabel { color: var(--ok); }
+.vcard.bad .vlabel { color: var(--bad); }
+.vcard.warn .vlabel { color: var(--warn); }
+.vcard.info .vlabel { color: var(--info); }
+.vcard.muted .vlabel { color: var(--muted); }
+.vline { margin: 8px 0 0; font-size: var(--fs-body); color: var(--text); line-height: 1.6; }
+.vwhy { margin-top: 10px; font-size: var(--fs-mini); color: var(--text-3); line-height: 1.6; }
+.vwhy code {
+  font-family: ui-monospace, Consolas, monospace; color: var(--accent);
+  background: var(--accent-soft); padding: 1px 5px; border-radius: 4px;
+}
+
+/* 折叠块 */
+.acc { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; transition: border-color .2s; }
+.acc:hover { border-color: var(--line-hover); }
+.acc > button {
+  appearance: none; width: 100%; border: 0; background: transparent; font: inherit;
+  display: flex; align-items: flex-start; gap: 12px; text-align: left;
+  padding: 15px 17px; cursor: pointer; color: var(--text);
+}
+.acc > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.acc .n {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: var(--accent);
+  background: var(--accent-soft); border: 1px solid var(--line);
+}
+.acc .t { flex: 1; min-width: 0; }
+.acc .t b { display: block; font-size: var(--fs-h3); font-weight: 700; }
+.acc .t span { display: block; margin-top: 3px; font-size: var(--fs-mini); color: var(--text-3); line-height: 1.55; }
+.acc .caret {
+  flex: 0 0 auto; color: var(--text-3); font-size: 11px; margin-top: 4px;
+  transition: transform .24s ease;
+}
+.acc[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.acc .body {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .26s cubic-bezier(.4, 0, .2, 1);
+}
+.acc[aria-expanded="true"] .body { grid-template-rows: 1fr; }
+.acc .body > div { overflow: hidden; }
+.acc .body p {
+  margin: 0; padding: 0 17px 16px 51px;
+  font-size: var(--fs-body); color: var(--text-2); line-height: 1.7;
+}
+.acc .body p b { color: var(--text); }
+.acc .body code {
+  font-family: ui-monospace, Consolas, monospace; font-size: .93em;
+  color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px;
+}
+
+/* 版本时间轴 */
+.tl { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; margin-top: 10px; }
+.tl::before {
+  content: ""; position: absolute; left: 0; right: calc(100% / var(--n, 5)); top: 13px; height: 2px;
+  background: var(--line);
+}
+.tl-item { position: relative; padding-top: 0; }
+.tl-dot {
+  appearance: none; border: 0; background: transparent; font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  padding: 0; text-align: left; width: 100%; color: var(--text-3);
+}
+.tl-dot .d {
+  width: 12px; height: 12px; border-radius: 50%; margin: 8px 0 0 2px;
+  background: var(--bg); border: 2px solid var(--line);
+  transition: all .2s ease; position: relative; z-index: 1;
+}
+.tl-dot .v { font-size: var(--fs-mini); font-weight: 800; letter-spacing: .4px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.tl-dot .h { font-size: var(--fs-mini); color: var(--text-2); line-height: 1.45; max-width: 17ch; }
+.tl-item.on .tl-dot .d { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+.tl-item.on .tl-dot .v { color: var(--accent); }
+.tl-item.on .tl-dot .h { color: var(--text); }
+.tl-panel {
+  margin-top: 22px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); padding: 16px 18px; box-shadow: var(--shadow);
+  min-height: 92px;
+}
+.tl-panel .ph { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.tl-panel .ph b { font-size: var(--fs-h3); font-weight: 700; }
+.tl-panel .ph span { font-size: var(--fs-mini); font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.tl-panel p { margin: 0; font-size: var(--fs-body); color: var(--text-2); line-height: 1.7; }
+@media (max-width: 760px) {
+  .tl { grid-auto-flow: row; grid-auto-columns: auto; gap: 10px; }
+  .tl::before { display: none; }
+}
+
+/* 表格 */
+table.kv { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+table.kv th, table.kv td {
+  text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.kv th { font-size: var(--fs-mini); font-weight: 700; color: var(--text-3); letter-spacing: .5px; }
+table.kv td { color: var(--text-2); }
+table.kv td b { color: var(--text); }
+table.kv tr:last-child th, table.kv tr:last-child td { border-bottom: 0; }
+table.kv .mono { font-family: ui-monospace, Consolas, monospace; font-size: .93em; }
+
+/* 小统计 */
+.stat { text-align: left; }
+.stat b { display: block; font-size: clamp(22px, 2.4vw, 32px); font-weight: 800; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.stat span { display: block; margin-top: 3px; font-size: var(--fs-mini); color: var(--text-3); line-height: 1.5; }
+
+/* 领域包 */
+.dom-panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 16px 18px; box-shadow: var(--shadow); }
+.dom-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.dom-head b { font-size: var(--fs-h3); }
+.dom-head span { font-size: var(--fs-mini); color: var(--text-3); }
+.dom-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; padding: 6px 0; border-top: 1px dashed var(--line); }
+.dom-row:first-of-type { border-top: 0; }
+.dom-row dt { font-size: var(--fs-mini); font-weight: 700; color: var(--text-3); }
+.dom-row dd { margin: 0; font-size: var(--fs-mini); color: var(--text-2); line-height: 1.6; }
+.dom-row dd b { color: var(--text); }
+
+/* 限制条目 */
+.limit { display: flex; gap: 10px; align-items: flex-start; }
+.limit .x {
+  flex: 0 0 auto; width: 18px; height: 18px; border-radius: 5px; margin-top: 1px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: var(--bad);
+  background: var(--bad-bg); border: 1px solid var(--bad-line);
+}
+.limit p { margin: 0; font-size: var(--fs-body); color: var(--text-2); line-height: 1.6; }
+.limit p b { color: var(--text); }
+
+/* ==========================================================================
+   外框：工具条 / 进度 / 页码 / 提示
+   ========================================================================== */
+.toolbar {
+  position: fixed; top: 16px; right: 18px; z-index: 20;
+  display: flex; align-items: center; gap: 8px;
+}
+.toolbar .who {
+  font-size: 11px; font-weight: 700; letter-spacing: .6px; color: var(--text-3);
+  margin-right: 4px; white-space: nowrap;
+}
+@media (max-width: 640px) { .toolbar .who { display: none; } }
+
+.progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 21;
+  background: var(--line);
+}
+.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s cubic-bezier(.4, 0, .2, 1); }
+
+.navbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px var(--pad-x) 14px;
+  pointer-events: none;
+}
+.navbar > * { pointer-events: auto; }
+.chapter { font-size: var(--fs-mini); color: var(--text-3); font-weight: 600; letter-spacing: .4px; flex: 1; min-width: 0; }
+.pager { font-size: var(--fs-mini); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.pager b { color: var(--text); font-weight: 800; }
+.arrows { display: flex; gap: 6px; }
+.dots { display: flex; gap: 6px; }
+.dots button {
+  appearance: none; width: 7px; height: 7px; padding: 0; border-radius: 50%;
+  border: 0; background: var(--line-hover); cursor: pointer; transition: all .18s ease;
+}
+.dots button:hover { background: var(--text-3); }
+.dots button.on { background: var(--accent); width: 20px; border-radius: 99px; }
+@media (max-width: 700px) { .dots { display: none; } }
+
+/* 演讲提示 */
+.notes {
+  position: fixed; left: 18px; bottom: 52px; z-index: 20;
+  max-width: min(520px, 56vw);
+  border: 1px solid var(--warn-line); border-left: 3px solid var(--warn);
+  background: var(--warn-bg); color: var(--warn);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: var(--fs-mini); line-height: 1.65;
+  box-shadow: var(--shadow);
+  transform: translateY(8px); opacity: 0; visibility: hidden;
+  transition: all .2s ease;
+}
+.notes.on { transform: none; opacity: 1; visibility: visible; }
+.notes b { display: block; font-size: 10px; letter-spacing: 1.2px; margin-bottom: 4px; opacity: .85; }
+
+.hint {
+  margin-top: clamp(18px, 3vh, 34px);
+  display: flex; flex-wrap: wrap; gap: 10px 18px;
+  font-size: var(--fs-mini); color: var(--text-3);
+}
+.hint kbd {
+  font-family: inherit; font-size: 10.5px; font-weight: 700;
+  padding: 2px 6px; border-radius: 5px;
+  border: 1px solid var(--line); background: var(--surface);
+  color: var(--text-2); margin-right: 5px;
+}
+
+/* 收尾大标题 */
+.end-title {
+  font-size: clamp(30px, 4.6vw, 62px); font-weight: 800; letter-spacing: -.8px; line-height: 1.16;
+}
+.end-title em { font-style: normal; color: var(--accent); }
+.url-box {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 18px; padding: 10px 16px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface);
+  font-family: ui-monospace, Consolas, monospace; font-size: var(--fs-body);
+  color: var(--accent);
+}
+
+/* 减弱动态效果 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* 打印 / 导出 PDF：所有屏顺序展开 */
+@media print {
+  body { overflow: visible; background: #fff; }
+  #pt, body::before, .toolbar, .navbar, .progress, .notes { display: none !important; }
+  #deck { position: static; }
+  .slide {
+    position: static; opacity: 1 !important; visibility: visible !important;
+    transform: none !important; page-break-after: always; min-height: 90vh;
+  }
+  .acc .body { grid-template-rows: 1fr !important; }
+}
+</style>
+</head>
+<body class="booting">
+<canvas id="pt" aria-hidden="true"></canvas>
+<div class="progress"><i id="prog"></i></div>
+
+<div class="toolbar">
+  <span class="who">AI元宝大侦探 ｜ v1.4.0</span>
+  <button class="btn-ico" id="noteBtn" type="button" title="演讲提示（N）" aria-label="切换演讲提示">☰</button>
+  <button class="btn-ico" id="themeBtn" type="button" title="日间 / 夜间（T）" aria-label="切换配色">◐</button>
+  <button class="btn-ico" id="fsBtn" type="button" title="全屏（F）" aria-label="全屏">⛶</button>
+</div>
+
+<main id="deck">
+
+  <!-- 1 封面 -->
+  <section class="slide on" data-ch="封面" data-note="20 秒。先别讲架构，只讲一句：让 AI 先查再说，说了就有出处。">
+    <div class="wrap">
+      <div class="kicker">1024 超能 Coding 周末 · 侦探赛道</div>
+      <h1>AI元宝大侦探</h1>
+      <p class="lead" style="font-size:var(--fs-h2);font-weight:700;color:var(--text);margin-top:6px;letter-spacing:-.3px">
+        查得到、信得过
+      </p>
+      <p class="lead">
+        丢一个问题进来，它去检索、给来源分级、交叉比对，
+        然后把<b>结论 + 一句话理由 + 可点开的来源</b>一起摆给你。证据不足，就明说没查到。
+      </p>
+      <div class="rule-bar">
+        <span class="ico">◆</span>
+        <span><b>标签由规则产出，模型只负责把话说顺。</b>同一批输入，永远得到同一张卡。</span>
+      </div>
+      <div class="hint">
+        <span><kbd>←</kbd><kbd>→</kbd>翻页</span>
+        <span><kbd>1</kbd>–<kbd>9</kbd>跳屏</span>
+        <span><kbd>N</kbd>演讲提示</span>
+        <span><kbd>T</kbd>配色</span>
+        <span><kbd>F</kbd>全屏</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 问题 -->
+  <section class="slide" data-ch="问题" data-note="40 秒。三件事都不难被检查，只是没人做。讲完停一下，让评委点头。">
+    <div class="wrap">
+      <div class="kicker">问题</div>
+      <h2>AI 敢回答，但不敢作证</h2>
+      <p class="lead">搜索类产品已经能「答得像」，但没人能替你回答下一句：<b>这话到底谁说的、能不能点开、换个人跑一遍还一样吗。</b></p>
+      <div class="grid g3 mt-m">
+        <div class="card">
+          <span class="mark b">✕</span>
+          <h3>没有出处</h3>
+          <p>结论说得斩钉截铁，一条来源都点不开。看起来权威，实际上无法反驳、也无法复核。</p>
+        </div>
+        <div class="card">
+          <span class="mark b">✕</span>
+          <h3>分不清轻重</h3>
+          <p>官方文件和养生号文章被同等采信。三家网站转同一篇通稿，看起来像三个独立印证。</p>
+        </div>
+        <div class="card">
+          <span class="mark b">✕</span>
+          <h3>顺手编原文</h3>
+          <p>引用看起来像原文，回原文里逐字找，找不到。这类幻觉最难被普通人识破。</p>
+        </div>
+      </div>
+      <div class="rule-bar">
+        <span class="ico">◆</span>
+        <span>这三件事都不难被检查，只是<b>没人把它做成默认动作</b>。这个作品只做这一件事。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 三层 -->
+  <section class="slide" data-ch="做法" data-note="40 秒。别念架构图。只强调一件事：模型不碰标签。">
+    <div class="wrap">
+      <div class="kicker">做法</div>
+      <h2>三层，每层只管一件事</h2>
+      <div class="grid g3 mt-m">
+        <div class="card layer">
+          <span class="tag">检索层</span>
+          <h3>主动去捞反方</h3>
+          <p>一句话换成最多 3 路确定性问法，专门去捞官方口径和辟谣稿。</p>
+          <ul>
+            <li>元宝搜索 <code>SearchPro</code>，<code>TC3-HMAC-SHA256</code> 手写签名</li>
+            <li>无密钥 / 断网自动走离线样例，链路照样完整</li>
+            <li>每条记录自己是<b>被哪一路</b>捞回来的</li>
+          </ul>
+        </div>
+        <div class="card layer">
+          <span class="tag">裁决层</span>
+          <h3>算权重，不打分</h3>
+          <p>信源分四档，姿态分四种，加权投票算出真 / 假 / 说不准。</p>
+          <ul>
+            <li>语义判定<b>只判单条</b>，不判结论</li>
+            <li>引用必须<b>逐字可校验</b>，对不上就作废那一条</li>
+            <li>同源转载判重，权重减半</li>
+          </ul>
+        </div>
+        <div class="card layer">
+          <span class="tag">表达层</span>
+          <h3>只负责把话说顺</h3>
+          <p>模型可以润色那一句话，但绝不参与打标签。</p>
+          <ul>
+            <li>没配模型也能完整跑，卡片上会写明</li>
+            <li>静态卡自包含，可分享、可归档</li>
+            <li>每条证据标注<b>语义</b>还是<b>词典</b>判的</li>
+          </ul>
+        </div>
+      </div>
+      <div class="rule-bar">
+        <span class="ico">◆</span>
+        <span>所以同一批搜索结果，换一次调用、换一台机器，<b>标签必须一致</b>——这才叫可复核。模型只在终点出现一次。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 权重计算器 -->
+  <section class="slide" data-ch="裁决规则" data-note="60 秒。这一屏不讲故事，讲算术。可以请评委随口报一组，你现场拨。">
+    <div class="wrap">
+      <div class="kicker">裁决规则 · 可现场拨</div>
+      <h2>一条证据值多少，是算出来的</h2>
+      <p class="lead">拨下面四个因子，看权重怎么变。阈值都在 <b>config.py</b> 里，改完当场可复现，<b>不需要重训任何东西</b>。</p>
+      <div class="calc mt-m">
+        <div class="calc-controls">
+          <div class="field">
+            <div class="field-label"><span>权威度</span></div>
+            <div class="seg" data-group="tier" role="group">
+              <button class="chip on" data-k="1" type="button">T1 权威一手</button>
+              <button class="chip" data-k="2" type="button">T2 主流媒体</button>
+              <button class="chip" data-k="3" type="button">T3 垂直专业</button>
+              <button class="chip" data-k="4" type="button">T4 UGC</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label"><span>相关性</span><b id="relOut">0.82</b></div>
+            <input type="range" id="rel" min="0" max="1" step="0.01" value="0.82" aria-label="相关性">
+          </div>
+          <div class="field">
+            <div class="field-label"><span>时效</span></div>
+            <div class="seg" data-group="fresh" role="group">
+              <button class="chip on" data-k="30d" type="button">≤30 天</button>
+              <button class="chip" data-k="1y" type="button">≤1 年</button>
+              <button class="chip" data-k="3y" type="button">≤3 年</button>
+              <button class="chip" data-k="old" type="button">更早</button>
+              <button class="chip" data-k="none" type="button">无日期</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label"><span>姿态</span></div>
+            <div class="seg" data-group="stance" role="group">
+              <button class="chip on" data-k="support" type="button">支持</button>
+              <button class="chip" data-k="refute" type="button">否定</button>
+              <button class="chip" data-k="uncertain" type="button">存疑</button>
+              <button class="chip" data-k="neutral" type="button">仅陈述</button>
+            </div>
+          </div>
+        </div>
+        <div class="calc-out">
+          <div class="calc-num"><b id="wOut">1.01</b><span>单条权重</span></div>
+          <div class="bar"><i id="wBar"></i></div>
+          <div class="bar-cap"><span>0</span><span>单条上限 1.10</span></div>
+          <div class="formula" id="formula"></div>
+          <div class="calc-note" id="calcNote"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 五种终态 -->
+  <section class="slide" data-ch="终态" data-note="50 秒。重点演「说不准」和「没查到」。敢说不知道是这条赛道最值钱的镜头。">
+    <div class="wrap">
+      <div class="kicker">五种终态</div>
+      <h2>最值钱的一屏，是它敢说不知道</h2>
+      <p class="lead">点一下看每种终态的判定条件。注意最后两种：<b>没查到</b> 和 <b>查询失败</b>是两件事，不能混。</p>
+      <div class="seg mt-m" id="vSeg" role="group" aria-label="终态">
+        <button class="chip" data-k="true" type="button">真</button>
+        <button class="chip" data-k="false" type="button">假</button>
+        <button class="chip on" data-k="unclear" type="button">说不准</button>
+        <button class="chip" data-k="no_evidence" type="button">没查到可靠来源</button>
+        <button class="chip" data-k="error" type="button">查询失败</button>
+      </div>
+      <div class="vcard warn mt-m" id="vCard">
+        <div class="vlabel" id="vLabel">说不准</div>
+        <p class="vline" id="vLine"></p>
+        <div class="vwhy" id="vWhy"></div>
+      </div>
+      <div class="rule-bar">
+        <span class="ico">◆</span>
+        <span>「没查到」不等于「是假的」，也不等于「系统坏了」。<b>三种认输方式必须分得清</b>，否则用户会被自己的工具骗。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 三个机制 -->
+  <section class="slide" data-ch="可检验性" data-note="60 秒。这是拉开差距的地方：不是承诺可靠，是把自己最脆弱的地方指出来。">
+    <div class="wrap">
+      <div class="kicker">可检验性</div>
+      <h2>三个机制，专门用来打自己的脸</h2>
+      <p class="lead">单路检索只看得到同温层证据，转载稿会让一句话看起来被多家印证。这两件事都会让结论<b>看起来比实际更可靠</b>。</p>
+      <div class="grid mt-m" style="gap:10px">
+        <div class="acc" aria-expanded="false">
+          <button type="button">
+            <span class="n">1</span>
+            <span class="t"><b>多路查询规划</b><span>辟谣稿很少用提问式标题，不主动构造反向查询就会漏</span></span>
+            <span class="caret">▾</span>
+          </button>
+          <div class="body"><div><p>
+            一次查证自动跑最多 3 路确定性问法，<b>不依赖模型</b>，同一句话每次跑出同一组查询。
+            查真假走「原句 ／ 核心陈述 + 是谣言吗 官方辟谣 ／ 核心陈述 + 依据 研究 官方回应」。
+            结果按 URL 归一去重，卡片上的「检索路线」会显示<b>每路捞回多少条、其中多少条是新出现的</b>——
+            第 2、3 路新增全是 0，说明这个话题已经被第 1 路捞干净了，不用假装多跑了两路。
+          </p></div></div>
+        </div>
+        <div class="acc" aria-expanded="false">
+          <button type="button">
+            <span class="n">2</span>
+            <span class="t"><b>同源转载识别</b><span>三家网站转同一篇通稿，不该等于三个独立印证</span></span>
+            <span class="caret">▾</span>
+          </button>
+          <div class="body"><div><p>
+            取正文前 140 字做<b>字符三元组 Jaccard 相似度</b>，<code>≥ 0.55</code> 判为转载，记下原始出处。
+            转载条目的权重 <b>×0.5</b>，且不计入独立来源数。这一条直接作用在置信度上，
+            卡片上那条会整条降透明度并标注「转载」。
+          </p></div></div>
+        </div>
+        <div class="acc" aria-expanded="false">
+          <button type="button">
+            <span class="n">3</span>
+            <span class="t"><b>推翻路径 + 留一检验</b><span>回答「我凭什么信你」，而不是再给一个百分比</span></span>
+            <span class="caret">▾</span>
+          </button>
+          <div class="body"><div><p>
+            每张卡都附「想推翻这张卡，可以这样试」：回原文逐字核对最高权威那条、指向对立面的来源说明为什么没被采信、
+            用更晚的同级来源覆盖它。最后一条是量化的——<b>把权重最高的 3 条逐条抽掉重算</b>，
+            结论会翻就直接点名「这张卡是它撑着的」。比起一个置信度百分比，这个信息更能指导人怎么复核。
+          </p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 终态各进一步 -->
+  <section class="slide" data-ch="再进一步" data-note="50 秒。三条各点开一个例子。核心是：用户要的不是结论，是然后呢。">
+    <div class="wrap">
+      <div class="kicker">三种终态，各自再往前一步</div>
+      <h2>用户要的不是结论，是「然后呢」</h2>
+      <p class="lead">点开看真实样例。三步都<b>不参与裁决</b>，只负责把下一步交到人手里。</p>
+      <div class="grid mt-m" style="gap:10px">
+        <div class="acc" aria-expanded="true">
+          <button type="button">
+            <span class="n">真/假</span>
+            <span class="t"><b>关键数字核对</b><span>同一量纲在不同来源对不上，就摆出来</span></span>
+            <span class="caret">▾</span>
+          </button>
+          <div class="body"><div><p>
+            政策样例正好命中：官方写「最高不超过 <b>500 万元</b>」，两个官方来源一致；代办站写「最高可达 <b>3000 万元</b>」。
+            措辞只说「口径可能不同，请核对」，<b>从不说「矛盾」</b>——哪个数字对，得人点开原文定。
+            两条硬约束：只有一个来源给出多个值时不报（那是同一份材料在做口径对比），四位年份不当期限。
+          </p></div></div>
+        </div>
+        <div class="acc" aria-expanded="false">
+          <button type="button">
+            <span class="n">说不准</span>
+            <span class="t"><b>条件差异定位</b><span>指出两方说的其实不是同一件事</span></span>
+            <span class="caret">▾</span>
+          </button>
+          <div class="body"><div><p>
+            隔夜菜那条：否定方限定在「<b>冷藏</b>」，支持方限定在「<b>长期食用</b>」「<b>室温放置超过 4 小时</b>」。
+            → 这更像两个不同条件下的两个结论，不宜按同一句话裁决。
+            五类条件维度（人群 / 剂量与程度 / 使用场景 / 范围与口径 / 地域），纯词表 + 差集，不依赖模型。
+          </p></div></div>
+        </div>
+        <div class="acc" aria-expanded="false">
+          <button type="button">
+            <span class="n">没查到</span>
+            <span class="t"><b>最小补证清单</b><span>把「认输」变成可执行的下一步</span></span>
+            <span class="caret">▾</span>
+          </button>
+          <div class="body"><div><p>
+            按「这张卡实际缺什么」逐项生成：缺 T1 一手来源、来源集中在单一域名、只知道是转载但没拿到原文、
+            证据整体偏旧、关键来源没标时间……<b>最多给 4 条</b>——多了用户不会做，等于没给。
+          </p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 领域包 -->
+  <section class="slide" data-ch="复用" data-note="40 秒。点两个领域切换，让评委看到结论用语都变了，但代码没变。">
+    <div class="wrap">
+      <div class="kicker">高复用</div>
+      <h2>一个引擎，六个领域包</h2>
+      <p class="lead">换行业只换一个约 <b>30 行 JSON</b>：权威源表、线索词、语义上下文、结论用语、时效衰减全部配置化，<b>不改一行 Python</b>。</p>
+      <div class="seg mt-m" id="domSeg" role="group" aria-label="领域包"></div>
+      <div class="dom-panel mt-m" id="domPanel"></div>
+    </div>
+  </section>
+
+  <!-- 9 商业化 -->
+  <section class="slide" data-ch="落地" data-note="30 秒。不用逐行念。点两行：投标留痕和私域部署，这两个最能接活。">
+    <div class="wrap">
+      <div class="kicker">落地形态</div>
+      <h2>同一套能力，换一个壳就能用</h2>
+      <p class="lead">引擎不变，变的只是入口。<b>检索和模型都可以在客户内网，提问不出门</b>，只需要一个出网白名单调元宝搜索。</p>
+      <div class="card mt-m" style="padding:4px 6px">
+        <table class="kv">
+          <thead><tr><th style="width:22%">形态</th><th style="width:34%">面向谁</th><th>复用方式</th></tr></thead>
+          <tbody>
+            <tr><td><b>群机器人</b></td><td>中小企业内部（政策、用工）</td><td>一次部署，全公司问</td></tr>
+            <tr><td><b>浏览器插件</b></td><td>采购、投研、编辑</td><td>划词即查，结果直接存成静态卡</td></tr>
+            <tr><td><b>API</b></td><td>客户自有系统（CRM / ERP / 投标平台）</td><td><span class="mono">/api/check</span> 直接接，按次计</td></tr>
+            <tr><td><b>静态卡导出</b></td><td>需要留痕的场合（投标、审计、合规）</td><td>每张卡带 12 位指纹，可归档复核</td></tr>
+            <tr><td><b>工作流节点</b></td><td>已经在用 AI 工作台的团队</td><td>挂进现有流程，不换工具</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="rule-bar">
+        <span class="ico">◆</span>
+        <span>选场景的标准不是行业新不新，是<b>调用频率 × 人工成本 × 答错的代价</b>。政策与资质是固定动作反复做，财务法务是低频高价值。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 版本 -->
+  <section class="slide" data-ch="版本" data-note="50 秒。点每个节点。讲清一条：版本号存在的理由是「同一个问题不能有两种卡」。">
+    <div class="wrap">
+      <div class="kicker">版本特点 · v1.4.0</div>
+      <h2>从「跑通」到「可被检验」</h2>
+      <p class="lead">五个版本，每个版本只解决一件事。点节点看细节。</p>
+      <div class="tl mt-m" id="tl"></div>
+      <div class="tl-panel" id="tlPanel"></div>
+      <div class="rule-bar">
+        <span class="ico">◆</span>
+        <span>版本号写进每张卡的 JSON 和静态卡页脚。因为阈值、权重、词表改过之后<b>同一个问题就会得出不同的卡</b>——没有版本号，两张不一样的卡说不清是数据变了还是代码变了。</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 工程与交付 -->
+  <section class="slide" data-ch="工程" data-note="30 秒。四个数字一句话带过。重点说静态卡能离线复核，这是评委能带走的证据。">
+    <div class="wrap">
+      <div class="kicker">工程与交付</div>
+      <h2>下载就能跑，产物能带走</h2>
+      <div class="grid g4 mt-m">
+        <div class="card stat"><b>0</b><span>第三方依赖<br>纯 Python 标准库 + 原生 JS</span></div>
+        <div class="card stat"><b>4</b><span>个 GET 接口<br>健康 / 领域 / 样例 / 查证卡</span></div>
+        <div class="card stat"><b>12</b><span>位指纹<br>自包含静态卡可离线复核</span></div>
+        <div class="card stat"><b>600</b><span>颗粒子背景<br>实测 75fps，不占帧预算</span></div>
+      </div>
+      <div class="grid g3 mt-s">
+        <div class="card tight">
+          <h3>可现场切换检索层</h3>
+          <p class="small">加 <code style="font-family:ui-monospace,Consolas,monospace;color:var(--accent)">provider=mock|wsa</code> 就能在同一张卡上证明「骨架不变、检索层可换」。</p>
+        </div>
+        <div class="card tight">
+          <h3>异常原样透传</h3>
+          <p class="small">限频、没开通服务会显示成「查询失败」，不会伪装成「没查到」。这两种错不能混。</p>
+        </div>
+        <div class="card tight">
+          <h3>界面也是自包含的</h3>
+          <p class="small">日间 / 夜间只靠语义变量切换；粒子层 pointer-events:none，不遮挡任何交互。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 限制 -->
+  <section class="slide" data-ch="限制" data-note="40 秒。主动交代限制最能建立信任。别快进，念三条就够。">
+    <div class="wrap">
+      <div class="kicker">先说做不到的</div>
+      <h2>这些地方它做不到</h2>
+      <p class="lead">主动写清楚限制，比多给一个置信度百分比更能建立信任。<b>全部写在 README 里</b>。</p>
+      <div class="grid g2 mt-m" style="gap:12px">
+        <div class="card tight"><div class="limit"><span class="x">✕</span><p><b>词典法会漏判反讽和双重否定。</b>所以每条判定都附带原文句——漏判能被人一眼看出来，而不会被藏起来。</p></div></div>
+        <div class="card tight"><div class="limit"><span class="x">✕</span><p><b>引用是逐字校验，宁可保守。</b>模型做了合理改写（比如补了主语）也会被判无效并回落。</p></div></div>
+        <div class="card tight"><div class="limit"><span class="x">✕</span><p><b>同域名最多采信 2 条。</b>副作用是单一权威站独占的题目，可能因来源不足被判「没查到」。</p></div></div>
+        <div class="card tight"><div class="limit"><span class="x">✕</span><p><b>数字核对只并列，不裁判。</b>它是有意保守的提示器，不是审计工具——哪个数字对，得人点开原文定。</p></div></div>
+        <div class="card tight"><div class="limit"><span class="x">✕</span><p><b>转载识别只看文字重合度。</b>大幅改写后再转载会漏判；共用通稿模板会被压低权重，但不会翻转结论方向。</p></div></div>
+        <div class="card tight"><div class="limit"><span class="x">✕</span><p><b>离线样例是演示数据。</b>不得当作真实查证结果使用，页面会显示「离线样例」角标。</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 收尾 -->
+  <section class="slide" data-ch="收尾" data-note="20 秒。回到第一句话，然后直接打开作品跑一单给评委看。">
+    <div class="wrap">
+      <div class="kicker">收尾</div>
+      <p class="end-title">查得到、信得过<br><em>不是承诺，是每一步都点得开。</em></p>
+      <p class="lead">
+        它不会替你做决定，也不会假装知道。
+        它做的是把「这话谁说的、能不能点开、换个人跑一遍还一样吗」变成默认动作。
+      </p>
+      <div class="url-box">本地入口　http://127.0.0.1:8765/</div>
+      <div class="grid g3 mt-m" style="gap:10px">
+        <div class="card tight"><p class="small"><b style="color:var(--text)">?q=问题</b><br>带问题直接出卡，方便贴给评委</p></div>
+        <div class="card tight"><p class="small"><b style="color:var(--text)">分享卡片</b><br>导出可离线复核的静态卡</p></div>
+        <div class="card tight"><p class="small"><b style="color:var(--text)">T 键</b><br>投影建议用夜间配色</p></div>
+      </div>
+      <p class="sub mt-m">AI元宝大侦探 ｜ 1024 超能 Coding 周末 · 侦探赛道 ｜ v1.4.0</p>
+    </div>
+  </section>
+
+</main>
+
+<nav class="navbar">
+  <span class="chapter" id="chapter">封面</span>
+  <div class="dots" id="dots"></div>
+  <div class="arrows">
+    <button class="btn-ico" id="prevBtn" type="button" title="上一屏（←）" aria-label="上一屏">‹</button>
+    <button class="btn-ico" id="nextBtn" type="button" title="下一屏（→）" aria-label="下一屏">›</button>
+  </div>
+  <span class="pager"><b id="cur">1</b> / <span id="tot">13</span></span>
+</nav>
+
+<div class="notes" id="notes"><b>演讲提示</b><span id="noteText"></span></div>
+
+<script>
+/* ==========================================================================
+   1. 粒子背景（与主站 web/particles.js 同一套参数，600 颗）
+      颜色读 CSS 变量，切主题只重读颜色，粒子位置不跳。
+   ========================================================================== */
+(function () {
+  "use strict";
+  var CFG = {
+    count: 600,
+    velocitySpan: 0.45, radiusScale: 1.2, radiusMin: 0.8,
+    alphaSpan: 0.4, alphaMin: 0.2,
+    connectDist: 75, mouseConnectDist: 95,
+    mouseLineWidth: 1, linkAlphaScale: 0.18, linkLineWidth: 0.8, mouseLinkAlphaScale: 0.35
+  };
+  var cvs = document.getElementById("pt");
+  if (!cvs) return;
+  var ctx = cvs.getContext("2d");
+  if (!ctx) return;
+
+  var W = 0, H = 0, dpr = 1, raf = 0, running = false;
+  var ps = [], mouse = { x: null, y: null }, rt = 0;
+  var tone = { dot: "165,180,252", link: "129,140,248", mouse: "199,210,254", boost: 1.15 };
+  var reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  function readTone() {
+    var cs = getComputedStyle(document.documentElement);
+    function pick(n, d) { var v = cs.getPropertyValue(n); v = v ? v.trim() : ""; return v || d; }
+    tone.dot = pick("--pt-dot", tone.dot);
+    tone.link = pick("--pt-link", tone.link);
+    tone.mouse = pick("--pt-mouse", tone.mouse);
+    var b = parseFloat(pick("--pt-boost", String(tone.boost)));
+    tone.boost = isFinite(b) && b > 0 ? b : 1;
+  }
+
+  function seed() {
+    ps.length = 0;
+    for (var i = 0; i < CFG.count; i++) {
+      ps.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * CFG.velocitySpan,
+        vy: (Math.random() - 0.5) * CFG.velocitySpan,
+        r: Math.random() * CFG.radiusScale + CFG.radiusMin,
+        a: Math.random() * CFG.alphaSpan + CFG.alphaMin
+      });
+    }
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = Math.round(W * dpr);
+    cvs.height = Math.round(H * dpr);
+    cvs.style.width = W + "px";
+    cvs.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    seed();
+  }
+
+  function paint(step) {
+    ctx.clearRect(0, 0, W, H);
+    for (var i = 0; i < ps.length; i++) {
+      var p = ps[i];
+      if (step) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x += W; else if (p.x > W) p.x -= W;
+        if (p.y < 0) p.y += H; else if (p.y > H) p.y -= H;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(" + tone.dot + "," + p.a + ")";
+      ctx.fill();
+
+      for (var j = i + 1; j < ps.length; j++) {
+        var q = ps[j], dx = p.x - q.x, dy = p.y - q.y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < CFG.connectDist) {
+          var a = (1 - d / CFG.connectDist) * CFG.linkAlphaScale * tone.boost;
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+          ctx.strokeStyle = "rgba(" + tone.link + "," + a.toFixed(3) + ")";
+          ctx.lineWidth = CFG.linkLineWidth; ctx.stroke();
+        }
+      }
+      if (mouse.x !== null) {
+        var mx = p.x - mouse.x, my = p.y - mouse.y;
+        var md = Math.sqrt(mx * mx + my * my);
+        if (md < CFG.mouseConnectDist) {
+          var ma = (1 - md / CFG.mouseConnectDist) * CFG.mouseLinkAlphaScale * tone.boost;
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = "rgba(" + tone.mouse + "," + ma.toFixed(3) + ")";
+          ctx.lineWidth = CFG.mouseLineWidth; ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function loop() { paint(true); raf = requestAnimationFrame(loop); }
+  function start() {
+    if (reduce) { paint(false); return; }
+    if (running) return;
+    running = true; raf = requestAnimationFrame(loop);
+  }
+  function stop() { running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+
+  readTone(); resize(); start();
+
+  window.addEventListener("resize", function () {
+    if (rt) clearTimeout(rt);
+    rt = setTimeout(function () { resize(); if (!running) paint(false); }, 150);
+  });
+  window.addEventListener("mousemove", function (e) { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+  document.addEventListener("mouseleave", function () { mouse.x = null; mouse.y = null; });
+  document.addEventListener("visibilitychange", function () { document.hidden ? stop() : start(); });
+
+  window.__paintReTone = function () { readTone(); if (!running) paint(false); };
+  window.__stopPaint = stop;
+})();
+
+/* ==========================================================================
+   2. 主题
+   ========================================================================== */
+(function () {
+  "use strict";
+  function apply(t, persist) {
+    var next = t === "light" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    if (persist) { try { localStorage.setItem("detective-theme", next); } catch (e) {} }
+    if (window.__paintReTone) window.__paintReTone();
+  }
+  document.getElementById("themeBtn").addEventListener("click", function () {
+    apply(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark", true);
+  });
+  window.__toggleTheme = function () {
+    document.getElementById("themeBtn").click();
+  };
+})();
+
+/* ==========================================================================
+   3. 幻灯片导航
+   ========================================================================== */
+(function () {
+  "use strict";
+  var slides = [].slice.call(document.querySelectorAll(".slide"));
+  var dotsBox = document.getElementById("dots");
+  var chapter = document.getElementById("chapter");
+  var cur = document.getElementById("cur");
+  var prog = document.getElementById("prog");
+  var noteText = document.getElementById("noteText");
+  var notesBox = document.getElementById("notes");
+  var idx = 0;
+
+  document.getElementById("tot").textContent = slides.length;
+
+  slides.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-label", "第 " + (i + 1) + " 屏：" + (s.dataset.ch || ""));
+    b.addEventListener("click", function () { go(i); });
+    dotsBox.appendChild(b);
+  });
+  var dots = [].slice.call(dotsBox.children);
+
+  function go(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    idx = i;
+    slides.forEach(function (s, k) { s.classList.toggle("on", k === i); });
+    dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
+    var s = slides[i];
+    s.scrollTop = 0;
+    chapter.textContent = s.dataset.ch || "";
+    cur.textContent = i + 1;
+    prog.style.width = ((i + 1) / slides.length * 100) + "%";
+    noteText.textContent = s.dataset.note || "";
+    if (history.replaceState) history.replaceState(null, "", "#" + (i + 1));
+  }
+  window.__go = go;
+
+  function toggleNotes() { notesBox.classList.toggle("on"); }
+  function toggleFull() {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") {
+      if (e.key !== "Escape") return;
+    }
+    var k = e.key;
+    if (k === "ArrowRight" || k === "ArrowDown" || k === "PageDown" || k === " " || k === "Enter") {
+      e.preventDefault(); go(idx + 1);
+    } else if (k === "ArrowLeft" || k === "ArrowUp" || k === "PageUp") {
+      e.preventDefault(); go(idx - 1);
+    } else if (k === "Home") { e.preventDefault(); go(0); }
+    else if (k === "End") { e.preventDefault(); go(slides.length - 1); }
+    else if (k === "f" || k === "F") { toggleFull(); }
+    else if (k === "n" || k === "N") { toggleNotes(); }
+    else if (k === "t" || k === "T") { if (window.__toggleTheme) window.__toggleTheme(); }
+    else if (k === "?" ) { toggleNotes(); }
+    else if (/^[1-9]$/.test(k)) { go(parseInt(k, 10) - 1); }
+  });
+
+  document.getElementById("noteBtn").addEventListener("click", toggleNotes);
+  document.getElementById("fsBtn").addEventListener("click", toggleFull);
+  document.getElementById("prevBtn").addEventListener("click", function () { go(idx - 1); });
+  document.getElementById("nextBtn").addEventListener("click", function () { go(idx + 1); });
+
+  /* 触屏左右滑 */
+  var tx = 0, ty = 0;
+  document.addEventListener("touchstart", function (e) {
+    tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    var dx = e.changedTouches[0].clientX - tx;
+    var dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) go(idx + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+
+  /* 滚轮：节流，一屏一屏走。当前屏内容需要滚动时先让内容滚完，别抢事件 */
+  var lock = false;
+  document.addEventListener("wheel", function (e) {
+    if (lock) return;
+    if (Math.abs(e.deltaY) < 24) return;
+    var s = slides[idx];
+    var room = s.scrollHeight - s.clientHeight;
+    if (room > 4) {
+      var atTop = s.scrollTop <= 2;
+      var atBottom = s.scrollTop >= room - 2;
+      if ((e.deltaY > 0 && !atBottom) || (e.deltaY < 0 && !atTop)) return;
+    }
+    lock = true;
+    setTimeout(function () { lock = false; }, 520);
+    go(idx + (e.deltaY > 0 ? 1 : -1));
+  }, { passive: true });
+
+  /* 深链：#3 → 第 3 屏；页面内 hash 变化也要跟着走（否则分享出去的锚点只能新鲜打开才生效） */
+  function fromHash() {
+    var n = parseInt((location.hash || "").replace("#", ""), 10);
+    if (isFinite(n) && n > 0) go(n - 1);
+  }
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+  if (!location.hash) go(0);
+  dots[0].classList.add("on");
+
+  /* 定位完成后再开启过渡，首帧不闪 */
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { document.body.classList.remove("booting"); });
+  });
+})();
+
+/* ==========================================================================
+   4. 权重计算器
+   ========================================================================== */
+(function () {
+  "use strict";
+  var TIER = { "1": 1.0, "2": 0.7, "3": 0.5, "4": 0.25 };
+  var FRESH = { "30d": 1.10, "1y": 1.00, "3y": 0.90, "old": 0.80, "none": 0.95 };
+  var STANCE = { support: 1.0, refute: 1.0, uncertain: 0.45, neutral: 0 };
+  var state = { tier: "1", fresh: "30d", stance: "support", rel: 0.82 };
+  var MAX = 1.10;
+
+  var wOut = document.getElementById("wOut");
+  var wBar = document.getElementById("wBar");
+  var formula = document.getElementById("formula");
+  var noteEl = document.getElementById("calcNote");
+  var relEl = document.getElementById("rel");
+  var relOut = document.getElementById("relOut");
+
+  function group(name) {
+    return [].slice.call(document.querySelectorAll('[data-group="' + name + '"] .chip'));
+  }
+  ["tier", "fresh", "stance"].forEach(function (name) {
+    group(name).forEach(function (b) {
+      b.addEventListener("click", function () {
+        state[name] = b.dataset.k;
+        group(name).forEach(function (x) { x.classList.toggle("on", x === b); });
+        render();
+      });
+    });
+  });
+  relEl.addEventListener("input", function () {
+    state.rel = parseFloat(relEl.value);
+    relOut.textContent = state.rel.toFixed(2);
+    render();
+  });
+
+  function render() {
+    var t = TIER[state.tier], f = FRESH[state.fresh], s = STANCE[state.stance];
+    var relPart = 0.55 + 0.45 * state.rel;
+    var w = t * relPart * f * s;
+
+    wOut.textContent = w.toFixed(2);
+    wBar.style.width = Math.min(100, w / MAX * 100).toFixed(1) + "%";
+
+    formula.innerHTML =
+      "<em>" + t.toFixed(2) + "</em> × (0.55 + 0.45 × <em>" + state.rel.toFixed(2) + "</em>)" +
+      " × <em>" + f.toFixed(2) + "</em> × <em>" + s.toFixed(2) + "</em>" +
+      " = <em>" + w.toFixed(3) + "</em>";
+
+    if (s === 0) {
+      noteEl.innerHTML = "<b>仅陈述不计票。</b>权重归零——「据某媒体报道」这类不算表态，不能参与投票。";
+    } else if (w >= 1.0) {
+      noteEl.innerHTML = "<b>单条就跨过了「总权重 ≥ 1.0」这道线。</b>也就是说，一道题有时只靠一条来源在撑着——这正是留一检验要抽查的对象。";
+    } else if (w >= 0.6) {
+      noteEl.innerHTML = "<b>单条不够 1.0，但已经过了 0.6。</b>过了 0.6 就有资格参与「说不准」的判定：双方都够 0.6 且优势比 < 0.68，就不站队。";
+    } else {
+      noteEl.innerHTML = "<b>单条太轻。</b>需要跟其他来源叠加才够门槛；只有这一类来源时，结论会是「没查到可靠来源」。";
+    }
+  }
+  render();
+})();
+
+/* ==========================================================================
+   5. 五种终态
+   ========================================================================== */
+(function () {
+  "use strict";
+  var DATA = {
+    "true": {
+      cls: "ok", label: "真", hot: true,
+      line: "这个说法成立。来源摆得出来，点得开。",
+      why: "优势比 ≥ <code>0.68</code>，优势一方胜出。置信度 = 优势比 ± 最高权威档校正 ± 单一站点校正，夹在 20%~95%。"
+    },
+    "false": {
+      cls: "bad", label: "假",
+      line: "这个说法不成立。反方权重压过正方，且来源够权威。",
+      why: "同上，只是反方占优。词典法命中前会先做否定式守卫——「没有科学依据」里的「有科学依据」不算支持。"
+    },
+    "unclear": {
+      cls: "warn", label: "说不准",
+      line: "两方都够权威，我不替你站队。原话并排列出，再指出它们说的可能不是同一件事。",
+      why: "双方权重都 ≥ <code>0.6</code>，且优势比 < <code>0.68</code>。这一档存在的意义：宁可说不知道，也不靠「多数票」蒙一个结论。"
+    },
+    "no_evidence": {
+      cls: "muted", label: "没查到可靠来源",
+      line: "没有足够可靠的证据支持任何一方。下面会给出「再补哪几样就能定性」。",
+      why: "总权重 < <code>1.0</code>，或开放问题最高相关性 < <code>0.5</code>。注意：没查到 ≠ 是假的。"
+    },
+    "error": {
+      cls: "bad", label: "查询失败",
+      line: "检索层没有正常返回：限频、没开通服务、密钥缺失。",
+      why: "错误码原样透传，<b>绝不伪装成「没查到」</b>。这两种认输方式混在一起，用户就没法判断该改问题还是改配置。"
+    }
+  };
+  var seg = document.getElementById("vSeg");
+  var card = document.getElementById("vCard");
+  var label = document.getElementById("vLabel");
+  var line = document.getElementById("vLine");
+  var why = document.getElementById("vWhy");
+  var chips = [].slice.call(seg.querySelectorAll(".chip"));
+
+  function pick(k) {
+    var d = DATA[k];
+    if (!d) return;
+    card.className = "vcard " + d.cls + " mt-m";
+    label.textContent = d.label;
+    line.textContent = d.line;
+    why.innerHTML = d.why;
+    chips.forEach(function (c) { c.classList.toggle("on", c.dataset.k === k); });
+  }
+  chips.forEach(function (c) { c.addEventListener("click", function () { pick(c.dataset.k); }); });
+  pick("unclear");
+})();
+
+/* ==========================================================================
+   6. 折叠块（机制 / 终态再进一步）
+   ========================================================================== */
+(function () {
+  "use strict";
+  [].slice.call(document.querySelectorAll(".acc")).forEach(function (acc) {
+    var btn = acc.querySelector(":scope > button");
+    btn.setAttribute("aria-expanded", acc.getAttribute("aria-expanded") === "true" ? "true" : "false");
+    btn.addEventListener("click", function () {
+      var open = acc.getAttribute("aria-expanded") === "true";
+      acc.setAttribute("aria-expanded", open ? "false" : "true");
+      btn.setAttribute("aria-expanded", open ? "false" : "true");
+    });
+  });
+})();
+
+/* ==========================================================================
+   7. 领域包
+   ========================================================================== */
+(function () {
+  "use strict";
+  var DOMAINS = [
+    {
+      id: "general", name: "通用查证", tag: "任何一句拿不准的话",
+      q: "微波炉加热食物会致癌吗",
+      src: "央媒、监管机构、官方辟谣平台、权威医疗机构",
+      labels: "真 / 假 / 说不准 / 没查到可靠来源",
+      note: "不预设行业，按内置白名单分级。"
+    },
+    {
+      id: "policy", name: "政策与补贴", tag: "老板 / 财务 / 项目申报",
+      q: "宁波市智能化改造项目最高补贴多少",
+      src: "各级政府门户、发改委、工信、财政、人社",
+      labels: "现行政策支持 / 与现行政策不符 / 政策口径存在冲突 / 查不到官方原文",
+      note: "必排除代办机构宣传与解读文章。判定要点：文件是否现行有效、条件是本地还是全国、金额是最高限额还是普惠标准。"
+    },
+    {
+      id: "tender", name: "资质与招投标", tag: "采购 / 投标 / 质检",
+      q: "这家供应商的 3C 证书还有效吗",
+      src: "全国认证认可信息公共服务平台、CQC、认监委、国家企业信用信息公示系统",
+      labels: "资质有效，可采信 / 与官方登记不符 / 登记信息互相矛盾 / 官方库查不到记录",
+      note: "关键区分：「证书存在」≠「证书覆盖该型号」，「有效期至某日」≠「当前状态正常」。必排除商家详情页与 B2B 平台自述。"
+    },
+    {
+      id: "health", name: "健康与消费说法", tag: "客服 / 内容审核 / 家族群",
+      q: "保鲜膜加热会释放致癌物吗",
+      src: "疾控、药监、食品安全风险评估中心、科普中国、联合辟谣平台",
+      labels: "真 / 假 / 说不准 / 没查到可靠来源（沿用通用用语，不美化）",
+      note: "判定要点：「有风险」≠「致癌」；动物实验不能直接推人；保健食品不得宣称疗效。必排除营销号与带货文案。"
+    },
+    {
+      id: "finance", name: "财务与数据口径", tag: "投研 / BD / 销售",
+      q: "年报里的毛利率口径含不含运费",
+      src: "巨潮资讯、沪深北交易所、证监会、港交所、SEC、统计局",
+      labels: "与原始披露一致 / 与原始披露不符 / 口径不一致，数字无法对齐 / 查不到原始披露",
+      note: "判定要点：报告期是否一致、合并口径、含税与否、营业收入 vs 营业总收入。数据平台和券商研报只能当线索。"
+    },
+    {
+      id: "labor", name: "劳动用工与合规", tag: "HR / 行政 / 老板",
+      q: "试用期最长可以约定多久",
+      src: "中国人大网、最高法、人社部、地方人社厅、地方高院",
+      labels: "有明确法律依据 / 与现行规定相悖 / 存在地方差异或判例分歧 / 查不到权威条文",
+      note: "必须分三层说：法条怎么写、地方怎么执行、个案怎么裁。法条不按新闻时效衰减——2019 年的条文今天照样有效。"
+    }
+  ];
+
+  var seg = document.getElementById("domSeg");
+  var panel = document.getElementById("domPanel");
+
+  DOMAINS.forEach(function (d, i) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (i === 0 ? " on" : "");
+    b.textContent = d.name;
+    b.dataset.k = d.id;
+    b.addEventListener("click", function () {
+      [].slice.call(seg.children).forEach(function (x) { x.classList.toggle("on", x === b); });
+      show(d);
+    });
+    seg.appendChild(b);
+  });
+
+  function show(d) {
+    panel.innerHTML =
+      '<div class="dom-head"><b>' + d.name + '</b><span>' + d.tag + '</span>' +
+      '<span style="margin-left:auto;font-family:ui-monospace,Consolas,monospace;color:var(--accent)">--domain ' + d.id + '</span></div>' +
+      '<dl style="margin:0">' +
+      '<div class="dom-row"><dt>典型问句</dt><dd>' + d.q + '</dd></div>' +
+      '<div class="dom-row"><dt>一手源</dt><dd>' + d.src + '</dd></div>' +
+      '<div class="dom-row"><dt>结论用语</dt><dd>' + d.labels + '</dd></div>' +
+      '<div class="dom-row"><dt>关键点</dt><dd>' + d.note + '</dd></div>' +
+      '</dl>';
+  }
+  show(DOMAINS[0]);
+})();
+
+/* ==========================================================================
+   8. 版本时间轴
+   ========================================================================== */
+(function () {
+  "use strict";
+  var VERSIONS = [
+    { v: "1.0.0", h: "三层骨架跑通", d: "检索层 → 裁决层 → 表达层；权威度 T1~T4 分级、加权投票、五种终态（真 / 假 / 说不准 / 没查到 / 查询失败）；零第三方依赖。" },
+    { v: "1.1.0", h: "语义判定与可校验引用", d: "模型逐条判立场但只判单条、不判结论；引用必须逐字可校验，单条失败只回落那一条；自包含静态卡 + 12 位指纹。" },
+    { v: "1.2.0", h: "领域包", d: "六个行业包（通用 / 政策 / 资质 / 健康 / 财务 / 法务），权威源表、线索词、语义上下文、结论用语、时效衰减全部配置化，新增行业不改 Python。" },
+    { v: "1.3.0", h: "让结论可被检验", d: "多路查询规划、同源转载识别（转载权重减半、不计独立源）、推翻路径、留一检验（抽掉支点结论会翻）；修复否定式守卫误判。" },
+    { v: "1.4.0", h: "三种终态各再进一层", d: "条件差异定位（说不准时指出两方说的不是同一件事）、关键数字核对（跨来源同量纲分歧提示）、最小补证清单（把没查到变成下一步）。" }
+  ];
+
+  var tl = document.getElementById("tl");
+  var panel = document.getElementById("tlPanel");
+  tl.style.setProperty("--n", VERSIONS.length);
+
+  VERSIONS.forEach(function (x, i) {
+    var item = document.createElement("div");
+    item.className = "tl-item" + (i === VERSIONS.length - 1 ? " on" : "");
+    item.innerHTML =
+      '<button class="tl-dot" type="button">' +
+      '<span class="d"></span><span class="v">v' + x.v + '</span><span class="h">' + x.h + '</span>' +
+      '</button>';
+    item.querySelector("button").addEventListener("click", function () {
+      [].slice.call(tl.children).forEach(function (c) { c.classList.toggle("on", c === item); });
+      show(x);
+    });
+    tl.appendChild(item);
+  });
+
+  function show(x) {
+    panel.innerHTML =
+      '<div class="ph"><b>' + x.h + '</b><span>v' + x.v + '</span></div>' +
+      '<p>' + x.d + '</p>';
+  }
+  show(VERSIONS[VERSIONS.length - 1]);
+})();
+</script>
+</body>
+</html>

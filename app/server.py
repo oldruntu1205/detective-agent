@@ -14,6 +14,7 @@ from .share import fingerprint, render_html
 from .version import VERSION_HISTORY, __version__
 
 WEB_DIR = ROOT / "web"
+DOCS_DIR = ROOT / "docs"
 
 MIME = {
     ".html": "text/html; charset=utf-8",
@@ -63,6 +64,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if route in ("/", "/index.html"):
             self._static(WEB_DIR / "index.html")
+            return
+        if route in ("/pitch", "/pitch.html"):
+            # 路演页：自包含单文件，不依赖 /static
+            self._static(DOCS_DIR / "pitch.html")
             return
         if route == "/api/health":
             self._json(200, {

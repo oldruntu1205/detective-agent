@@ -71,6 +71,14 @@ python run.py --provider wsa
 `prefers-reduced-motion: reduce` 下不跑动画，只静态铺一帧；切到后台标签页时暂停 rAF。
 粒子层 `pointer-events: none`、`z-index: 0`，内容在 `z-index: 1`，不遮挡任何交互。
 
+**路演页。** `http://127.0.0.1:8765/pitch`，或直接用浏览器打开 `docs/pitch.html`（单文件自包含，
+不依赖 `/static`，可以单独拷走）。13 屏：封面 / 问题 / 三层 / 权重计算器 / 五种终态 / 三个可检验机制 /
+终态再进一步 / 领域包 / 落地形态 / 版本时间轴 / 工程与交付 / 已知限制 / 收尾。
+
+操作：`←→↑↓` 或滚轮翻页，`1`–`9` 跳屏，`#5` 可直达第 5 屏，`N` 看演讲提示，`T` 换配色，`F` 全屏，
+`Ctrl+P` 可导出成 PDF 备份（打印样式会把 13 屏顺序展开）。权重计算器、终态切换、折叠块、领域包、
+版本节点都可以现场点。
+
 ---
 
 ## 三层架构
@@ -304,7 +312,9 @@ detective-agent/
 │   └── providers/            元宝搜索 / 离线样例
 ├── web/                      查证卡前端（领域下拉 / 日间夜间切换 / Canvas 粒子背景）
 ├── demo/                     离线样例数据（通用 + 领域）
-├── docs/DOMAINS.md           高复用场景说明与复用矩阵
+├── docs/
+│   ├── DOMAINS.md            高复用场景说明与复用矩阵
+│   └── pitch.html            路演页（自包含单文件，13 屏，键盘驱动）
 ├── out/cards/                --share 生成的静态卡与 JSON
 └── scripts/
     ├── RECORDING.md          三次真实查询的录屏脚本与路演结构
