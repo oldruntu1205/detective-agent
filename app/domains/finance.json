@@ -1,0 +1,32 @@
+{
+  "id": "finance",
+  "name": "财务与行业数据口径",
+  "tagline": "这个数字出自哪份披露，口径算不算得清",
+  "labels": {
+    "true": "与原始披露一致",
+    "false": "与原始披露不符",
+    "unclear": "口径不一致，数字无法对齐",
+    "found": "已定位原始披露",
+    "no_evidence": "查不到原始披露"
+  },
+  "authority": {
+    "t1": ["cninfo.com.cn", "sse.com.cn", "szse.cn", "bse.cn", "csrc.gov.cn", "hkexnews.hk",
+           "sec.gov", "stats.gov.cn", "pbc.gov.cn", "safe.gov.cn"],
+    "t2": ["stcn.com", "cnstock.com", "yicai.com", "caixin.com", "21jingji.com", "cls.cn", "eastmoney.com"],
+    "t3": ["wind.com.cn", "choice.eastmoney.com", "iyiou.com", "qianzhan.com"],
+    "t4": ["xueqiu.com", "zhihu.com", "mp.weixin.qq.com", "weibo.com"]
+  },
+  "lexicon": {
+    "refute": {"口径不一致": 3, "调整后重述": 3, "追溯调整": 3, "非经常性损益": 2,
+               "与年报数据不符": 3, "单位不一致": 3, "含税与不含税": 2, "合并口径": 1},
+    "support": {"年报原文": 3, "审计报告": 3, "经审计": 3, "合并报表口径": 2, "同一控制下": 1}
+  },
+  "semantic_context": "本领域判定以交易所披露的定期报告原文为准。重点核对四件事：数字是否出自同一报告期、是否为合并口径、是否含税、是营业收入还是营业总收入。第三方数据平台、券商研报、财经自媒体只能作为线索，不能作为结论依据。",
+  "queries": [
+    "年报里的毛利率口径含不含运费",
+    "这家公司去年营业收入是营收还是总营收",
+    "行业规模这个数字出自哪份报告"
+  ],
+  "fields": ["指标", "数值", "口径", "报告期", "披露来源"],
+  "disclaimer": "数据以交易所披露原文为准；本工具不构成投资建议。"
+}

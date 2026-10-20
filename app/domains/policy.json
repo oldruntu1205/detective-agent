@@ -1,0 +1,31 @@
+{
+  "id": "policy",
+  "name": "政策与补贴查证",
+  "tagline": "政策原文、有效期、申报条件，一次查清",
+  "labels": {
+    "true": "现行政策支持",
+    "false": "与现行政策不符",
+    "unclear": "政策口径存在冲突",
+    "found": "已查到官方原文",
+    "no_evidence": "查不到官方原文"
+  },
+  "authority": {
+    "t1": ["gov.cn", "ndrc.gov.cn", "mof.gov.cn", "miit.gov.cn", "most.gov.cn", "mohrss.gov.cn",
+           "samr.gov.cn", "zjj.zj.gov.cn", "zj.gov.cn", "ningbo.gov.cn", "jxj.ningbo.gov.cn"],
+    "t2": ["people.com.cn", "xinhuanet.com", "sasac.gov.cn", "cnfin.com", "yicai.com", "stcn.com"],
+    "t3": ["qianzhan.com", "askci.com", "hciproject.com"],
+    "t4": ["mp.weixin.qq.com", "zhihu.com", "xiaohongshu.com", "baijiahao.baidu.com"]
+  },
+  "lexicon": {
+    "refute": {"已废止": 3, "失效": 2, "被替代": 2, "不再执行": 3, "停止执行": 3, "调整后": 1, "废止": 3, "不适用": 2},
+    "support": {"现行有效": 3, "继续执行": 2, "自发布之日起施行": 2, "另行通知": 1}
+  },
+  "semantic_context": "本领域判定以官方发布的政策原文为准。注意区分：文件本身是否现行有效、是否已被新文件替代、申报条件是否针对本地（省/市）而非全国、补贴金额是否为最高限额而非普惠标准。转载文章、解读文章、代办机构的宣传一律不作为结论依据。",
+  "queries": [
+    "宁波市智能化改造项目最高补贴多少",
+    "专精特新小巨人 2026 年申报条件有哪些",
+    "研发费用加计扣除这条政策还有效吗"
+  ],
+  "fields": ["政策名称", "发文机关", "发布日期", "有效期", "申报条件", "补贴上限"],
+  "disclaimer": "政策存在地域与年度差异，正式申报前请以主管部门最新通知为准。"
+}

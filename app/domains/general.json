@@ -1,0 +1,16 @@
+{
+  "id": "general",
+  "name": "通用查证",
+  "tagline": "任何一句话，先查再说",
+  "labels": {},
+  "authority": {},
+  "lexicon": { "refute": {}, "support": {} },
+  "semantic_context": "",
+  "queries": [
+    "微波炉加热食物会致癌吗",
+    "元宝搜索每月免费调用额度是多少次",
+    "2027年诺贝尔文学奖得主是谁"
+  ],
+  "fields": ["结论", "依据", "来源"],
+  "disclaimer": ""
+}

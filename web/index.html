@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>查得到、信得过 · AI 元宝 1024 大侦探</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+      <span class="logo">🔍</span>
+      <h1 class="brand-title">查得到、信得过——AI 元宝 1024 大侦探</h1>
+    </div>
+  <div class="topright">
+    <select id="domainSel" class="domain-select" title="切换领域包：权威源、判定口径、结论用语一起换">
+      <option value="general">通用查证</option>
+    </select>
+    <span id="providerPill" class="pill pill-ghost">检索层检测中…</span>
+    <button id="shareBtn" class="btn-ghost" disabled title="先查一条，再点这里打开自包含静态卡">分享卡片</button>
+    <button id="copyBtn" class="btn-ghost" disabled title="先查一条，再点这里复制查证卡 JSON">复制 JSON</button>
+  </div>
+</header>
+
+<main>
+  <section class="searchbox">
+    <form id="askForm" autocomplete="off">
+      <input id="q" name="q" type="text" placeholder="丢一个拿不准的问题进来，我去查，再把来源摆给你" spellcheck="false">
+      <button id="askBtn" type="submit">查证</button>
+    </form>
+    <div class="domaine-line" id="domainTagline"></div>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <div id="notice" class="notice hidden"></div>
+
+  <section id="result" class="result hidden">
+    <div id="verdictCard" class="verdict">
+      <div class="verdict-head">
+        <div class="verdict-label" id="verdictLabel">—</div>
+        <div class="verdict-meta" id="verdictMeta"></div>
+      </div>
+      <p class="verdict-line" id="oneLine"></p>
+      <div class="conf" id="confWrap">
+        <span class="conf-name">置信度</span>
+        <div class="conf-bar"><i id="confBar"></i></div>
+        <span class="conf-num" id="confNum">—</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="col-main">
+        <div class="panel" id="factsPanel">
+          <h2>要点</h2>
+          <ul class="facts" id="facts"></ul>
+        </div>
+
+        <div class="panel" id="conflictPanel">
+          <h2>来源冲突</h2>
+          <p class="hint">两方都够权威的时候，这里会并排列出，不替你站队。</p>
+          <div class="conflict-grid" id="conflictGrid"></div>
+          <div class="conddiff hidden" id="condDiff"></div>
+        </div>
+
+        <div class="panel" id="numbersPanel">
+          <h2>关键数字核对</h2>
+          <p class="hint">同一量纲在不同来源里对不上时列在这里。只做提示，不参与裁决。</p>
+          <div class="numbers" id="numbers"></div>
+        </div>
+
+        <div class="panel">
+          <h2>裁决依据</h2>
+          <ol class="reasons" id="reasons"></ol>
+        </div>
+
+        <div class="panel" id="gapsPanel">
+          <h2>再补这几样，就能进一步定性</h2>
+          <p class="hint">「没查到」不是终点。下面是这张卡实际缺的东西，一条一条都能去补。</p>
+          <ol class="gaps" id="gaps"></ol>
+        </div>
+
+        <div class="panel" id="auditPanel">
+          <h2>想推翻这张卡，可以这样试</h2>
+          <p class="hint">可信度不靠承诺，靠可复核。前面几条是最容易被推翻的地方，最后一条是留一检验的实测结果。</p>
+          <ol class="audit" id="audit"></ol>
+        </div>
+      </div>
+
+      <div class="col-side">
+        <div class="panel" id="planPanel">
+          <h2>检索路线 <span class="count" id="planCount"></span></h2>
+          <p class="hint">一次查证自动跑多路问法，专门去捞反方和官方口径。</p>
+          <ol class="plan" id="plan"></ol>
+        </div>
+
+        <div class="panel">
+          <h2>来源证据 <span class="count" id="evidenceCount"></span></h2>
+          <div class="evidence" id="evidence"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="principles">
+      <div id="disclaimer" class="disclaimer hidden"></div>
+      <strong>这台机器不做的事：</strong>
+      证据不足时不给结论；查不到就说「没查到可靠来源」；
+      结论标签由可复现的加权规则产出，模型只负责把话说顺。
+      <span class="verline">规则版本 <b id="verPill">—</b> ｜ 阈值或权重改过之后同一个问题会得出不同的卡，所以每张卡都带版本号</span>
+    </footer>
+  </section>
+
+  <div id="empty" class="empty">
+    <p>三条硬规则：<b>先查再说</b> · <b>说得有出处</b> · <b>查不到就认怂</b></p>
+    <p class="empty-sub">上面点一个示例，或者直接输入你想核实的说法。<span class="verline-inline">当前规则版本 <b id="verPillEmpty">—</b></span></p>
+  </div>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>

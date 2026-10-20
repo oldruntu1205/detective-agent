@@ -1,0 +1,33 @@
+{
+  "id": "tender",
+  "name": "资质与招投标核查",
+  "tagline": "证书真伪、有效期、资质等级，查到官方库",
+  "labels": {
+    "true": "资质有效，可采信",
+    "false": "与官方登记不符",
+    "unclear": "登记信息互相矛盾",
+    "found": "已查到官方登记",
+    "no_evidence": "官方库查不到记录"
+  },
+  "authority": {
+    "t1": ["cnca.gov.cn", "cx.cnca.cn", "samr.gov.cn", "openstd.samr.gov.cn", "cnas.org.cn",
+           "cqc.com.cn", "ccc.gov.cn", "creditchina.gov.cn", "gjtjj.mof.gov.cn", "miit.gov.cn"],
+    "t2": ["cec.org.cn", "cechina.cn", "gongkong.com", "cinn.cn", "chinawuliu.com.cn"],
+    "t3": ["qcc.com", "tianyancha.com", "aiqicha.baidu.com"],
+    "t4": ["1688.com", "made-in-china.com", "mp.weixin.qq.com", "zhihu.com"]
+  },
+  "lexicon": {
+    "refute": {"已暂停": 3, "暂停": 2, "已撤销": 3, "撤销": 2, "已注销": 2, "注销": 2,
+               "已过期": 3, "过期": 2, "查无此证": 3, "查无": 3, "未查询到": 3,
+               "不在有效期内": 3, "虚假证书": 3, "冒用": 3, "与登记信息不符": 3, "未获认证": 2},
+    "support": {"证书有效": 3, "在有效期内": 3, "已备案": 2, "认证范围包含": 2, "检验合格": 2}
+  },
+  "semantic_context": "本领域判定以官方登记库（认监委、CQC、国家企业信用信息公示系统、国家标准全文公开系统）的查询结果为准。商家自述、B2B 详情页、宣传册一律视为待核实主张，不能作为结论依据。注意区分「证书存在」与「证书覆盖该型号/该范围」，以及「有效期至」与「已暂停」的差别。",
+  "queries": [
+    "这家供应商的 3C 证书还有效吗",
+    "该型号电机的能效等级符合 GB 18613 吗",
+    "投标人要求的 ISO 9001 认证范围对得上吗"
+  ],
+  "fields": ["证书编号", "发证机构", "有效期", "认证范围", "登记状态"],
+  "disclaimer": "证书状态随时可能变更，投标或签约前请以发证机构官网实时查询结果为准。"
+}

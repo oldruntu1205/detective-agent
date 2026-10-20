@@ -1,0 +1,27 @@
+{
+  "id": "health",
+  "name": "健康与消费品说法核查",
+  "tagline": "家族群转来的那句话，先查再转",
+  "labels": {},
+  "authority": {
+    "t1": ["chinacdc.cn", "nmpa.gov.cn", "cfsa.net.cn", "nhc.gov.cn", "piyao.org.cn", "kepuchina.cn",
+           "cma.org.cn", "cdc.gov", "who.int", "pubmed.ncbi.nlm.nih.gov", "cochrane.org"],
+    "t2": ["dxy.cn", "guokr.com", "msdmanuals.cn", "yiigle.com", "thepaper.cn", "people.com.cn"],
+    "t3": ["baike.baidu.com", "wikipedia.org", "haodf.com"],
+    "t4": ["mp.weixin.qq.com", "xiaohongshu.com", "douyin.com", "zhihu.com", "weibo.com"]
+  },
+  "lexicon": {
+    "refute": {"没有循证依据": 3, "无临床证据": 3, "不良反应监测": 1, "超范围宣传": 3,
+               "保健食品不是药品": 3, "不能替代药物": 3, "未获批": 3, "违规宣传": 3},
+    "support": {"说明书载明": 3, "批准适应证": 3, "临床研究显示": 2, "已获批上市": 2,
+                "列入禁用名单": 3, "检出超标": 3}
+  },
+  "semantic_context": "本领域判定以药监、疾控、国家级科普平台和循证医学证据为准。注意区分三件事：一是「有风险」与「致癌/致病」不是一回事；二是动物实验结论不能直接推到人；三是保健食品、普通食品不得宣称治疗作用。营销号、带货文案、个人体验一律不作为依据。",
+  "queries": [
+    "保鲜膜加热会释放致癌物吗",
+    "这款保健品宣称能降血糖靠谱吗",
+    "隔夜菜会致癌吗"
+  ],
+  "fields": ["说法", "结论", "证据等级", "来源"],
+  "disclaimer": "本工具提供公开信息核查，不构成医疗建议；身体不适应就医。"
+}

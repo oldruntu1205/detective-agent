@@ -1,0 +1,33 @@
+{
+  "id": "labor",
+  "name": "劳动用工与合规",
+  "tagline": "条文怎么写的、地方怎么执行的，分开说",
+  "labels": {
+    "true": "有明确法律依据",
+    "false": "与现行规定相悖",
+    "unclear": "存在地方差异或判例分歧",
+    "found": "已查到条文依据",
+    "no_evidence": "查不到权威条文"
+  },
+  "authority": {
+    "t1": ["npc.gov.cn", "court.gov.cn", "mohrss.gov.cn", "gov.cn", "chinalaw.gov.cn",
+           "spc.gov.cn", "zjcourt.cn", "zjhrss.gov.cn", "ningbo.gov.cn"],
+    "t2": ["legalinfo.com.cn", "chinalawinfo.com", "thepaper.cn", "yicai.com"],
+    "t3": ["pkulaw.com", "itslaw.com", "lawyee.org"],
+    "t4": ["zhihu.com", "mp.weixin.qq.com", "weibo.com", "baijiahao.baidu.com"]
+  },
+  "lexicon": {
+    "refute": {"违反": 2, "无效": 2, "不予支持": 3, "违法": 3, "不得约定": 3, "超出法定": 3,
+               "已废止": 3, "不成立": 2},
+    "support": {"依据": 1, "载明": 2, "条规定": 3, "司法解释": 2, "指导意见": 1, "应当": 1}
+  },
+  "semantic_context": "本领域判定以现行法律条文、司法解释和人力资源社会保障部的规定为准。必须区分三层：国家标准（法律条文怎么写）、地方口径（省市的执行细则）、个案裁量（裁判观点分歧）。存在地方差异时必须明确说出来，不能拿一个省的规则套全国。劳动合同法、司法解释的条号要能对上原文。",
+  "queries": [
+    "试用期最长可以约定多久",
+    "离职经济补偿的 N 是怎么算的",
+    "竞业限制补偿金的最低标准是多少"
+  ],
+  "fields": ["法律依据", "条文原文", "适用范围", "地方差异"],
+  "freshness_decay": false,
+  "disclaimer": "本工具提供公开条文核查，不构成法律意见；具体争议请咨询执业律师或当地人社部门。"
+}
